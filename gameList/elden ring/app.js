@@ -1,12 +1,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // --- ASSETS REAIS (Elden Ring PNGs) ---
   const SYMBOLS = [
-    { id: 'rune', img: 'assets/symbols/rune.png', weight: 75, mult3: 0.1, mult4: 0.2, mult5: 1.5 },
-    { id: 'grace', img: 'assets/symbols/grace.png', weight: 40, mult3: 0.3, mult4: 0.5, mult5: 4 },
-    { id: 'erdtree', img: 'assets/symbols/erdtree.png', weight: 20, mult3: 0.5, mult4: 1.2, mult5: 8 },
-    { id: 'pot', img: 'assets/symbols/pot.png', weight: 5, mult3: 6, mult4: 15, mult5: 40 },
-    { id: 'ring', img: 'assets/symbols/ring.png', weight: 4, mult3: 15, mult4: 80, mult5: 400 }
+    { id: 'rune', img: 'https://cdn-icons-png.flaticon.com/512/2190/2190532.png', weight: 75, mult3: 0.1, mult4: 0.2, mult5: 1.5 },
+    { id: 'grace', img: 'https://cdn-icons-png.flaticon.com/512/766/766023.png', weight: 40, mult3: 0.3, mult4: 0.5, mult5: 4 },
+    { id: 'erdtree', img: 'https://cdn-icons-png.flaticon.com/512/2424/2424751.png', weight: 20, mult3: 0.5, mult4: 1.2, mult5: 8 },
+    { id: 'pot', img: 'https://cdn-icons-png.flaticon.com/512/3093/3093952.png', weight: 5, mult3: 6, mult4: 15, mult5: 40 },
+    { id: 'ring', img: 'https://cdn-icons-png.flaticon.com/512/1651/1651722.png', weight: 4, mult3: 15, mult4: 80, mult5: 400 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
@@ -20,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let totalBetAccum = 0;
   let spinning = false;
 
-  // --- BRIDGE LISTENER ---
   window.addEventListener('message', (event) => {
       if(event.data.type === 'INIT_GAME') {
           balance = parseFloat(event.data.balance);
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceEl = document.getElementById('balance');
   const betDisplayEl = document.getElementById('betDisplay');
   const betValueEl = document.getElementById('betValue');
-  const lastResultEl = document.getElementById('lastResult');
   const spinBtn = document.getElementById('spinBtn');
   const reelsEls = [...document.querySelectorAll('.reel')];
   const decBetBtn = document.getElementById('decBet');
@@ -49,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceScaleText = document.getElementById('balanceScaleText');
   const balanceScaleGreen = document.getElementById('balanceScaleGreen');
   const balanceScaleRed = document.getElementById('balanceScaleRed');
-  let personaAdviceEl = document.getElementById('personaAdvice');
 
   if(!spinBtn || reelsEls.length === 0) return;
   const reelImages = reelsEls.map(reel => [...reel.querySelectorAll('.cell img')]);
@@ -72,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateBalanceScale(){
     const lucroLiquido = totalWinAccum - totalBetAccum;
     const pct = totalBetAccum ? (lucroLiquido / totalBetAccum) * 100 : 0;
-    balanceScaleText.textContent = pct >= 0 ? `Progresso: ${Math.round(pct)}%` : `Dano: ${Math.round(pct)}%`;
+    balanceScaleText.textContent = pct >= 0 ? `Grace: ${Math.round(pct)}%` : `Dano: ${Math.round(pct)}%`;
     balanceScaleGreen.style.width = pct >= 0 ? `${Math.min(50+(pct/2), 100)}%` : '50%';
     balanceScaleRed.style.width = pct < 0 ? `${Math.min(50+(Math.abs(pct)/2), 100)}%` : '50%';
   }
@@ -104,8 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let win = 0;
     const rows = results[0].length;
     const cols = results.length;
-    
-    // (Lógica Simplificada para integridade do patch)
     for (let row = 0; row < rows; row++) {
         const symbolID = results[0][row];
         if(!PAYOUT_BY_ID[symbolID]) continue;

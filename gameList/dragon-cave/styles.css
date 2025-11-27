@@ -57,14 +57,13 @@ body {
     border: 1px solid #333;
 }
 
-/* ÁREA DA CAVERNA (Grid) */
+/* GRID */
 .cave-grid-wrapper {
     flex: 1;
     display: flex;
     padding: 10px;
     gap: 5px;
     overflow-y: auto;
-    /* Faz a lista começar de baixo para cima visualmente */
     align-items: flex-end; 
     justify-content: center;
     background: radial-gradient(circle at center, #2a2038 0%, #000 100%);
@@ -72,7 +71,7 @@ body {
 
 .multiplier-sidebar {
     display: flex;
-    flex-direction: column-reverse; /* Nível 1 embaixo */
+    flex-direction: column-reverse;
     justify-content: space-around;
     padding-bottom: 10px;
     gap: 8px;
@@ -98,7 +97,7 @@ body {
 .cave-grid {
     flex: 1;
     display: flex;
-    flex-direction: column-reverse; /* Nível 1 embaixo */
+    flex-direction: column-reverse;
     gap: 8px;
     padding-bottom: 10px;
     max-width: 320px;
@@ -107,20 +106,12 @@ body {
 .cave-row {
     display: flex;
     gap: 10px;
-    opacity: 0.3; /* Desativado por padrão */
+    opacity: 0.3;
     transition: 0.3s;
     pointer-events: none;
 }
-
-.cave-row.active {
-    opacity: 1;
-    pointer-events: auto;
-    transform: scale(1.02);
-}
-
-.cave-row.passed {
-    opacity: 0.5;
-}
+.cave-row.active { opacity: 1; pointer-events: auto; transform: scale(1.02); }
+.cave-row.passed { opacity: 0.5; }
 
 .egg-box {
     flex: 1;
@@ -136,12 +127,8 @@ body {
     transition: 0.2s;
     box-shadow: 0 4px 0 #150f20;
 }
-.egg-box:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #150f20;
-}
+.egg-box:active { transform: translateY(2px); box-shadow: 0 2px 0 #150f20; }
 
-/* CONTEÚDO DO OVO */
 .egg-content {
     width: 60%;
     height: 60%;
@@ -150,145 +137,57 @@ body {
     background-position: center;
 }
 
-/* Estilos de Estado do Ovo */
+/* OVO DE DRAGÃO (Default) */
 .egg-default {
-    background-image: url('https://cdn-icons-png.flaticon.com/128/2530/2530666.png'); /* Ovo Misterioso */
-    filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));
+    background-image: url('https://cdn-icons-png.flaticon.com/512/822/822123.png');
+    filter: drop-shadow(0 0 5px rgba(255, 159, 26, 0.3));
 }
 
+/* DIAMANTE (Vitória) */
 .egg-diamond {
-    background-image: url('https://cdn-icons-png.flaticon.com/128/679/679660.png'); /* Diamante */
+    background-image: url('https://cdn-icons-png.flaticon.com/512/9754/9754898.png');
     filter: drop-shadow(0 0 10px var(--gold));
     animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* DRAGÃO (Derrota) */
 .egg-dragon {
-    background-image: url('https://cdn-icons-png.flaticon.com/128/1236/1236243.png'); /* Dragão */
+    background-image: url('https://cdn-icons-png.flaticon.com/512/10003/10003755.png');
     filter: drop-shadow(0 0 10px var(--dragon-red));
     animation: shake 0.4s ease-in-out;
 }
 
-.egg-box.revealed {
-    background: #332447;
-    border-color: #554075;
-    pointer-events: none;
-}
+.egg-box.revealed { background: #332447; border-color: #554075; pointer-events: none; }
+.egg-box.bad { background: #4a1515; border-color: var(--dragon-red); }
+.egg-box.good { background: #1a4a2e; border-color: var(--safe-green); }
 
-.egg-box.bad {
-    background: #4a1515;
-    border-color: var(--dragon-red);
-}
-
-.egg-box.good {
-    background: #1a4a2e;
-    border-color: var(--safe-green);
-}
-
-/* CONTROLES */
 .game-controls {
     background: #151020;
     padding: 15px;
     border-top: 1px solid #333;
     z-index: 10;
 }
-
 .status-message {
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-    color: var(--dragon-orange);
-    height: 20px;
+    text-align: center; margin-bottom: 10px; font-size: 0.9rem; color: var(--dragon-orange); height: 20px;
 }
-
-.input-row {
-    display: flex;
-    gap: 10px;
-}
-
+.input-row { display: flex; gap: 10px; }
 .bet-adjust {
-    display: flex;
-    flex: 1;
-    background: #000;
-    border-radius: 8px;
-    border: 1px solid #333;
-    padding: 2px;
+    display: flex; flex: 1; background: #000; border-radius: 8px; border: 1px solid #333; padding: 2px;
 }
-.bet-adjust button {
-    width: 40px;
-    background: #333;
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    border-radius: 6px;
-}
-.bet-adjust input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: white;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
+.bet-adjust button { width: 40px; background: #333; border: none; color: white; font-size: 1.2rem; cursor: pointer; border-radius: 6px; }
+.bet-adjust input { flex: 1; background: transparent; border: none; color: white; text-align: center; font-weight: bold; font-size: 1.1rem; }
 
 .action-btn {
-    flex: 1;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1rem;
-    color: #fff;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: 0.2s;
+    flex: 1; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: #fff; cursor: pointer; text-transform: uppercase; transition: 0.2s;
 }
-
-.play {
-    background: linear-gradient(180deg, var(--dragon-orange), #d35400);
-    box-shadow: 0 4px 0 #a04000;
-}
-.play:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #a04000;
-}
-
+.play { background: linear-gradient(180deg, var(--dragon-orange), #d35400); box-shadow: 0 4px 0 #a04000; }
+.play:active { transform: translateY(2px); box-shadow: 0 2px 0 #a04000; }
 .cashout {
-    background: linear-gradient(180deg, #00e676, #00a854);
-    box-shadow: 0 4px 0 #007a3d;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.1;
-    padding: 5px;
+    background: linear-gradient(180deg, #00e676, #00a854); box-shadow: 0 4px 0 #007a3d; display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 5px;
 }
-.cashout span:last-child {
-    font-size: 0.8rem;
-    opacity: 0.9;
-}
-.cashout:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #007a3d;
-}
+.cashout span:last-child { font-size: 0.8rem; opacity: 0.9; }
+.cashout:active { transform: translateY(2px); box-shadow: 0 2px 0 #007a3d; }
 
-/* ANIMAÇÕES */
-@keyframes popIn {
-    0% { transform: scale(0); }
-    80% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
-@keyframes flashRed {
-    0% { background: rgba(255,0,0,0.5); }
-    100% { background: transparent; }
-}
-
-.shake-screen {
-    animation: shake 0.5s ease-in-out;
-}
+@keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.shake-screen { animation: shake 0.5s ease-in-out; }

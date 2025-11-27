@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLevel = 0;
         balance -= currentBet;
         updateBalanceDisplay();
-        broadcastUpdate(-currentBet, 'bet'); // Notifica Aposta
+        broadcastUpdate(-currentBet, 'bet'); 
 
         renderGridStructure();
         document.getElementById(`row-${currentLevel}`).classList.add('active');
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const winAmount = currentBet * LEVEL_MULTIPLIERS[winIndex];
         balance += winAmount;
         updateBalanceDisplay();
-        broadcastUpdate(winAmount, 'win'); // Notifica Vitória
+        broadcastUpdate(winAmount, 'win');
 
         statusMsg.innerHTML = `VOCÊ ESCAPOU!<br>Ganho: R$ ${winAmount.toFixed(2)}`;
         statusMsg.style.color = "var(--gold)";

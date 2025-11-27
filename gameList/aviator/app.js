@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- STATE ---
-    let balance = 0.00; // Começa zerado
+    let balance = 0.00;
     let betAmount = 2.00;
     let currentMultiplier = 1.00;
     let crashPoint = 0;
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (betAmount > balance) { alert("Saldo insuficiente!"); return; }
         balance -= betAmount;
         updateBalance();
-        broadcastUpdate(-betAmount, 'bet'); // Notifica
+        broadcastUpdate(-betAmount, 'bet'); 
         userStatus = 'BET_PLACED';
         updateControls();
     }
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const win = betAmount * currentMultiplier;
         balance += win;
         updateBalance();
-        broadcastUpdate(win, 'win'); // Notifica Ganho
+        broadcastUpdate(win, 'win'); 
         userStatus = 'CASHED_OUT';
         lblMain.textContent = "GANHOU";
         lblSub.textContent = `R$ ${win.toFixed(2)}`;
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elMultiplier.style.color = "#fff";
         if (userStatus === 'CASHED_OUT') userStatus = 'NONE';
         updateControls();
-        setTimeout(startGame, 2000); // Auto Loop
+        setTimeout(startGame, 2000);
     }
 
     function updateControls() {

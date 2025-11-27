@@ -1,11 +1,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // --- ASSETS REAIS (One Piece PNGs) ---
   const SYMBOLS = [
-    { id: 'hat', img: 'assets/symbols/hat.png', weight: 75, mult3: 0.1, mult4: 0.25 },
-    { id: 'fruit', img: 'assets/symbols/fruit.png', weight: 40, mult3: 0.3, mult4: 1 },
-    { id: 'meat', img: 'assets/symbols/meat.png', weight: 30, mult3: 1.2, mult4: 3 },
-    { id: 'skull', img: 'assets/symbols/skull.png', weight: 5, mult3: 20, mult4: 50 }
+    { id: 'hat', img: 'https://cdn-icons-png.flaticon.com/512/9906/9906660.png', weight: 75, mult3: 0.2, mult4: 0.5 },
+    { id: 'fruit', img: 'https://cdn-icons-png.flaticon.com/512/4055/4055373.png', weight: 40, mult3: 0.5, mult4: 1.5 },
+    { id: 'meat', img: 'https://cdn-icons-png.flaticon.com/512/1582/1582121.png', weight: 30, mult3: 1.5, mult4: 4 },
+    { id: 'skull', img: 'https://cdn-icons-png.flaticon.com/512/9163/9163012.png', weight: 5, mult3: 25, mult4: 60 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
@@ -14,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const PLACEHOLDERS = { hat: '', fruit: '', meat: '', skull: '' };
 
   let balance = 0.0;
-  let bet = 5.0;
+  let bet = 2.0;
   let totalWinAccum = 0;
   let totalBetAccum = 0;
   let spinning = false;
@@ -36,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceEl = document.getElementById('balance');
   const betDisplayEl = document.getElementById('betDisplay');
   const betValueEl = document.getElementById('betValue');
-  const lastResultEl = document.getElementById('lastResult');
   const spinBtn = document.getElementById('spinBtn');
   const reelsEls = [...document.querySelectorAll('.reel')];
   const decBetBtn = document.getElementById('decBet');
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateBalanceScale(){
     const lucroLiquido = totalWinAccum - totalBetAccum;
     const pct = totalBetAccum ? (lucroLiquido / totalBetAccum) * 100 : 0;
-    balanceScaleText.textContent = `Lucro: ${Math.round(pct)}%`;
+    balanceScaleText.textContent = `Recompensa: ${Math.round(pct)}%`;
     balanceScaleGreen.style.width = pct >= 0 ? `${Math.min(50+(pct/2), 100)}%` : '50%';
     balanceScaleRed.style.width = pct < 0 ? `${Math.min(50+(Math.abs(pct)/2), 100)}%` : '50%';
   }
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     betDisplayEl.value = bet.toFixed(2);
     renderPayoutCards();
     totalWinEl.textContent = `Ganho: ${formatMoney(totalWinAccum)}`;
-    totalBetEl.textContent = `Apostados: ${formatMoney(totalBetAccum)}`;
+    totalBetEl.textContent = `Aposta: ${formatMoney(totalBetAccum)}`;
     updateBalanceScale();
     spinBtn.disabled = !canSpin();
   }
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showCentralWin(amount){
     const popup = document.createElement('div');
     popup.className = 'win-popup';
-    popup.innerHTML = `GOMU GOMU!<br>💰 ${formatMoney(amount)}`;
+    popup.innerHTML = `PIRATE KING!<br>💰 ${formatMoney(amount)}`;
     document.body.appendChild(popup);
     requestAnimationFrame(() => { popup.style.opacity = '1'; popup.style.transform = 'translate(-50%,-50%) scale(1.1)'; });
     setTimeout(() => { popup.remove(); }, 2000);
@@ -138,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  decBetBtn.addEventListener('click', () => { bet = Math.max(0.1, bet - 0.1); updateDisplay(); });
-  incBetBtn.addEventListener('click', () => { bet = Math.min(balance, bet + 0.1); updateDisplay(); });
+  decBetBtn.addEventListener('click', () => { bet = Math.max(0.1, bet - 0.5); updateDisplay(); });
+  incBetBtn.addEventListener('click', () => { bet = Math.min(balance, bet + 0.5); updateDisplay(); });
   
   spinBtn.addEventListener('click', () => {
     if (!canSpin()) return;

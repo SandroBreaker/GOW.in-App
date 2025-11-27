@@ -30,15 +30,16 @@ const Masker = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa lógica de formulários (Login/Registro)
+    setupLoginInteraction(); 
     checkLoginState();
-    setupGameBridge(); // Inicia escuta dos jogos
+    setupGameBridge(); 
 });
 
 function initApp() {
     if(document.getElementById('gameGrid')) renderGames('gameGrid');
     if(document.getElementById('depositAmounts')) renderDeposit('depositAmounts');
     
-    // Inicia verificação de tasks com DB
     loadTasksState().then(() => {
         if(document.getElementById('taskList')) renderTasks('taskList');
     });
@@ -61,19 +62,17 @@ function setupGameBridge() {
 
         if (type === 'GAME_UPDATE') {
             userProfile.balance = parseFloat(payload.newBalance);
-            updateUserUI();
+            updateUserUI(); // Atualiza UI imediatamente para responsividade
             
+            // Persiste no Supabase sem bloquear a thread principal
             try {
                 await supabase
                     .from('wallets')
                     .update({ balance: userProfile.balance })
                     .eq('player_id', userProfile.id);
                 
-                if(payload.action === 'win' && payload.delta > 0) {
-                     // Log vitória se necessário
-                }
             } catch (err) {
-                console.error("Erro ao sincronizar saldo:", err);
+                console.error("Sync Error:", err);
             }
         }
     });
@@ -84,15 +83,13 @@ async function loadTasksState() {
     if(!userProfile.id) return;
 
     try {
-        // 1. Busca tasks já reclamadas
-        const { data: claimedTasks, error } = await supabase
+        const { data: claimedTasks } = await supabase
             .from('player_tasks')
             .select('task_id')
             .eq('player_id', userProfile.id);
 
         const claimedIds = claimedTasks ? claimedTasks.map(t => t.task_id) : [];
 
-        // 2. Busca histórico de depósitos para desbloquear task
         const { data: deposits } = await supabase
             .from('transactions')
             .select('id')
@@ -103,7 +100,6 @@ async function loadTasksState() {
         
         const hasDeposit = deposits && deposits.length > 0;
 
-        // 3. Atualiza estado local das tasks
         tasks.forEach(task => {
             if (claimedIds.includes(task.id)) {
                 task.status = "Resgatado";
@@ -111,13 +107,13 @@ async function loadTasksState() {
                 if (task.type === 'check_deposit') {
                     task.status = hasDeposit ? "Receber" : "Bloqueado";
                 } else {
-                    task.status = "Receber"; // Welcome e Verify Email padrão
+                    task.status = "Receber"; 
                 }
             }
         });
 
     } catch(err) {
-        console.error("Erro ao carregar tasks:", err);
+        console.error("Task Error:", err);
     }
 }
 
@@ -131,7 +127,6 @@ function setupTaskInteraction() {
                 const index = e.target.dataset.index;
                 const task = tasks[index];
 
-                // Lógica Específica por Tipo
                 if (task.type === 'verify_email') {
                     const code = prompt(`Enviamos um código para ${userProfile.fullData.email || 'seu e-mail'}.\n(Simulação: Digite 1234)`);
                     if (code !== '1234') {
@@ -143,12 +138,10 @@ function setupTaskInteraction() {
                 e.target.disabled = true;
                 e.target.textContent = 'Processando...';
 
-                // Adiciona saldo
                 const { data: newBalance, error: balError } = await supabase
                     .rpc('add_balance', { p_id: userProfile.id, amount: task.reward });
 
                 if (!balError) {
-                    // Marca como feito no DB
                     const { error: taskError } = await supabase
                         .from('player_tasks')
                         .insert([{ player_id: userProfile.id, task_id: task.id }]);
@@ -160,12 +153,11 @@ function setupTaskInteraction() {
                         showToast(`Bônus de R$ ${task.reward.toFixed(2)} resgatado!`, 'success');
                         renderTasks('taskList');
                     } else {
-                         // Rollback visual se falhar DB (raro)
-                         showToast('Erro ao salvar progresso.', 'error');
                          e.target.disabled = false;
+                         showToast('Erro ao salvar tarefa.', 'error');
                     }
                 } else {
-                    showToast('Erro ao resgatar bônus.', 'error');
+                    showToast('Erro ao creditar bônus.', 'error');
                     e.target.disabled = false;
                 }
             }
@@ -189,13 +181,8 @@ async function checkLoginState() {
                 .single();
 
             if (error || !player) {
-                if(error && error.code === 'PGRST116') { // Não encontrado
-                    localStorage.removeItem('gowin_player_id');
-                    showLogin();
-                } else {
-                    // Erro de rede?
-                    showToast('Erro de conexão.', 'error');
-                }
+                localStorage.removeItem('gowin_player_id');
+                showLogin();
                 return;
             }
 
@@ -224,23 +211,21 @@ function showLogin() {
     const loginView = document.getElementById('login-view');
     if(loginView) {
         loginView.style.display = 'flex';
-        setupLoginInteraction();
+        // Garante estado inicial correto dos formulários
+        const footerSpan = document.querySelector('.login-footer span');
+        if(footerSpan && footerSpan.textContent === "Entrar") {
+             // Já está no modo registro, ok
+        } else {
+             // Força reset visual se necessário
+        }
     }
 }
 
 function showApp() {
-    const loginView = document.getElementById('login-view');
-    if(loginView) loginView.style.display = 'none';
-    
-    const header = document.getElementById('mainHeader');
-    if(header) header.style.display = 'flex';
-    
-    const container = document.getElementById('app-container');
-    if(container) container.style.display = 'block';
-    
-    const nav = document.getElementById('mainNav');
-    if(nav) nav.style.display = 'flex';
-    
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('mainHeader').style.display = 'flex';
+    document.getElementById('app-container').style.display = 'block';
+    document.getElementById('mainNav').style.display = 'flex';
     initApp();
 }
 
@@ -253,6 +238,7 @@ function setupLoginInteraction() {
     const phoneInput = document.getElementById('regPhone');
     const nameInput = document.getElementById('regName');
     const termsCheck = document.getElementById('termsCheck');
+    const emailInput = document.getElementById('regEmail');
 
     if(cpfInput) cpfInput.addEventListener('input', (e) => e.target.value = Masker.cpf(e.target.value));
     if(phoneInput) phoneInput.addEventListener('input', (e) => e.target.value = Masker.phone(e.target.value));
@@ -267,16 +253,17 @@ function setupLoginInteraction() {
             const subtitle = document.querySelector('.login-subtitle');
             const terms = document.querySelector('.terms');
             
+            // Campos de registro
+            const regFields = [nameInput, cpfInput, phoneInput];
+
             if(isLoginMode) {
-                // MODO LOGIN
+                // MODO LOGIN (Esconder Registro)
                 if(subtitle) subtitle.textContent = "Bem-vindo de volta!";
                 
-                // Esconder campos de registro
-                ['regName', 'regCpf', 'regPhone'].forEach(id => {
-                    const el = document.getElementById(id);
+                regFields.forEach(el => {
                     if(el) {
                         el.parentElement.style.display = 'none';
-                        el.removeAttribute('required'); // IMPORTANTE: Remove obrigatoriedade
+                        el.removeAttribute('required'); // CRÍTICO: Remove required para permitir submit
                     }
                 });
                 
@@ -289,14 +276,13 @@ function setupLoginInteraction() {
                 footerSpan.textContent = "Criar Conta";
 
             } else {
-                // MODO REGISTRO
+                // MODO REGISTRO (Mostrar tudo)
                 if(subtitle) subtitle.textContent = "Jogue. Conquiste. Lucre.";
                 
-                ['regName', 'regCpf', 'regPhone'].forEach(id => {
-                    const el = document.getElementById(id);
+                regFields.forEach(el => {
                     if(el) {
                         el.parentElement.style.display = 'block';
-                        el.setAttribute('required', 'true'); // Restaura obrigatoriedade
+                        el.setAttribute('required', 'true'); // CRÍTICO: Restaura required
                     }
                 });
                 
@@ -314,8 +300,7 @@ function setupLoginInteraction() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const emailEl = document.getElementById('regEmail');
-        const email = emailEl ? emailEl.value : '';
+        const email = emailInput ? emailInput.value : '';
         
         if(btnLogin) {
             btnLogin.disabled = true;
@@ -348,13 +333,13 @@ function setupLoginInteraction() {
             const cpf = cpfInput.value;
             const phone = phoneInput.value;
 
-            if(name.length < 3 || cpf.length < 14) {
-                showToast('Preencha os dados corretamente.', 'error');
+            // Validação Client-Side
+            if(cpf.length < 14) {
+                showToast('CPF incompleto.', 'error');
                 if(btnLogin) btnLogin.disabled = false;
                 return;
             }
 
-            // 1. Tentar criar
             const { data, error } = await supabase
                 .from('players')
                 .insert([{ username: name, email, cpf, phone }])
@@ -362,18 +347,14 @@ function setupLoginInteraction() {
                 .single();
 
             if (error) {
-                console.error(error);
                 if(error.code === '23505') {
-                    // DUPLICADO
-                    showToast('E-mail ou CPF já cadastrados. Tente logar.', 'error');
+                    showToast('E-mail ou CPF já cadastrados.', 'error');
                 } else {
                     showToast('Erro ao criar conta.', 'error');
                 }
                 if(btnLogin) btnLogin.disabled = false;
             } else {
-                // Sucesso
                 localStorage.setItem('gowin_player_id', data.id);
-                // Reseta tasks locais para o novo user
                 resetTasksLocal();
                 showToast('Conta criada com sucesso!', 'success');
                 setTimeout(() => location.reload(), 1500);
@@ -433,6 +414,100 @@ function setupGameInteraction() {
     if(closeBtn) closeBtn.addEventListener('click', closeGameLauncher);
 }
 
+// --- SAQUE (WITHDRAWAL) ---
+function setupWithdrawalLogic() {
+    const btnWithdraw = document.getElementById('btnRequestWithdraw');
+    const inputVal = document.querySelector('#saque input.dark-input'); // Assumindo novo layout
+    const pageSaque = document.getElementById('saque');
+
+    // Injeta novo HTML para o saque se necessário (Fallback para garantir UI atualizada)
+    if(pageSaque) {
+        const withdrawAvail = document.getElementById('withdraw-available');
+        if(withdrawAvail) {
+            const parent = withdrawAvail.parentElement.parentElement;
+            // Atualiza o container para ter inputs corretos
+            const manualBox = parent.querySelector('.manual-deposit-box');
+            if(manualBox) {
+                manualBox.innerHTML = `
+                    <label>Valor do Saque (Min. R$ 10,00)</label>
+                    <input type="number" id="withdrawAmount" class="dark-input" placeholder="0.00" style="margin-bottom:10px;">
+                    
+                    <label>CPF do Titular (Destino)</label>
+                    <input type="text" id="withdrawCpf" class="dark-input" value="${userProfile.fullData.cpf || '...'}" readonly style="margin-bottom:10px; opacity:0.7;">
+                    
+                    <label>Chave PIX</label>
+                    <input type="text" id="withdrawKey" class="dark-input" placeholder="CPF, Email ou Aleatória">
+                `;
+            }
+        }
+    }
+
+    if(btnWithdraw) {
+        // Remove listeners antigos
+        const newBtn = btnWithdraw.cloneNode(true);
+        btnWithdraw.parentNode.replaceChild(newBtn, btnWithdraw);
+        
+        newBtn.addEventListener('click', async () => {
+            const amountInput = document.getElementById('withdrawAmount');
+            const keyInput = document.getElementById('withdrawKey');
+            
+            if(!amountInput || !keyInput) return;
+
+            const amount = parseFloat(amountInput.value);
+            const key = keyInput.value;
+
+            if(!amount || amount < 10) {
+                showToast('Valor mínimo de saque: R$ 10,00', 'error');
+                return;
+            }
+
+            if(amount > userProfile.balance) {
+                showToast('Saldo insuficiente.', 'error');
+                return;
+            }
+
+            if(key.length < 5) {
+                showToast('Digite uma chave PIX válida.', 'error');
+                return;
+            }
+
+            newBtn.disabled = true;
+            newBtn.textContent = 'Processando...';
+
+            // 1. Débito Seguro via RPC (Usa lógica de aposta para debitar)
+            // Se 'place_bet' não existir, usa 'add_balance' com valor negativo
+            // Vamos usar o RPC 'place_bet' que já tem check de saldo
+            const { data: newBalance, error } = await supabase
+                .rpc('place_bet', { p_id: userProfile.id, amount: amount });
+
+            if (error) {
+                showToast('Erro ao processar saque (Saldo insuficiente?).', 'error');
+                newBtn.disabled = false;
+                newBtn.textContent = 'Solicitar Saque';
+                return;
+            }
+
+            // 2. Registra Transação
+            await supabase.from('transactions').insert({
+                player_id: userProfile.id,
+                type: 'WITHDRAW',
+                amount: amount,
+                status: 'pending',
+                external_id: key // Salva a chave pix aqui
+            });
+
+            // 3. Atualiza UI
+            userProfile.balance = newBalance;
+            updateUserUI();
+            amountInput.value = '';
+            
+            showToast('Saque solicitado com sucesso!', 'success');
+            newBtn.disabled = false;
+            newBtn.textContent = 'Solicitar Saque';
+        });
+    }
+}
+
 // --- DEPÓSITO ---
 function setupDepositInteraction() {
     const manualInput = document.getElementById('manualDepositInput');
@@ -480,7 +555,6 @@ function setupDepositInteraction() {
             actionBtn.disabled = true;
             actionBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> GERANDO...';
 
-            // 1. Transaction Pending no DB
             const { data: txn, error } = await supabase
                 .from('transactions')
                 .insert([{
@@ -493,8 +567,7 @@ function setupDepositInteraction() {
                 .single();
 
             if(error) {
-                console.error("DB Error:", error);
-                showToast('Erro interno ao iniciar depósito.', 'error');
+                showToast('Erro interno.', 'error');
                 actionBtn.disabled = false;
                 actionBtn.textContent = "TENTAR NOVAMENTE";
                 return;
@@ -503,12 +576,11 @@ function setupDepositInteraction() {
             const cleanCpf = userData.cpf ? userData.cpf.replace(/\D/g, '') : "00000000000";
             const cleanPhone = userData.phone ? userData.phone.replace(/\D/g, '') : "00000000000";
             
-            // CORREÇÃO CRÍTICA DO PAYLOAD PIX
             const payload = {
                 "amount": amountCents, 
                 "offer_hash": OFFER_HASH_DEFAULT, 
                 "payment_method": "pix",
-                "installments": 1, // ADICIONADO AQUI NA RAIZ
+                "installments": 1, 
                 "customer": {
                     name: userData.name || "Cliente GOW",
                     email: userData.email || "email@temp.com",
@@ -548,13 +620,11 @@ function setupDepositInteraction() {
                     showPixModal(apiData, amount);
                     monitorPayment(apiData.hash, amount, txn.id);
                 } else {
-                    console.error("Invictus Error:", apiData);
                     const msg = apiData.errors ? Object.values(apiData.errors).flat().join(' ') : (apiData.message || 'Verifique seus dados.');
                     showToast(`Erro no PIX: ${msg}`, 'error');
                 }
 
             } catch(e) {
-                console.error(e);
                 showToast('Erro de conexão com gateway.', 'error');
             } finally {
                 actionBtn.disabled = false;
@@ -668,19 +738,6 @@ function setupNavigation() {
             if(link) {
                 navigator.clipboard.writeText(link.value);
                 showToast('Link copiado!', 'success');
-            }
-        });
-    }
-}
-
-function setupWithdrawalLogic() {
-    const btnWithdraw = document.getElementById('btnRequestWithdraw');
-    if(btnWithdraw) {
-        btnWithdraw.addEventListener('click', () => {
-            if(userProfile.balance > 0) {
-                 showToast('Solicitação enviada para análise.', 'info');
-            } else {
-                 showToast('Saldo insuficiente para saque.', 'error');
             }
         });
     }
