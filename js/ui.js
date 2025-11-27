@@ -6,7 +6,7 @@ function formatCurrency(val) {
 }
 
 export function animateBalanceUI(newBalance) {
-    const els = [document.getElementById('user-balance'), document.getElementById('profile-balance-display')];
+    const els = [document.getElementById('user-balance'), document.getElementById('profile-balance-display'), document.getElementById('withdraw-available')];
     const start = userProfile.balance;
     const end = newBalance;
     const duration = 1000;
@@ -18,7 +18,8 @@ export function animateBalanceUI(newBalance) {
         const ease = 1 - (1 - progress) * (1 - progress);
         const currentVal = start + (end - start) * ease;
         
-        els.forEach(el => { if(el) el.textContent = formatCurrency(currentVal); });
+        const formatted = formatCurrency(currentVal);
+        els.forEach(el => { if(el) el.textContent = formatted; });
 
         if (progress < 1) requestAnimationFrame(update);
         else els.forEach(el => { if(el) el.textContent = formatCurrency(end); });
@@ -61,16 +62,24 @@ export function openGameLauncher(gameName, gameUrl = null) {
         if (gameUrl) {
             const iframe = document.createElement('iframe');
             iframe.src = gameUrl;
-            iframe.setAttribute('scrolling', 'no'); // Tentar travar scroll
+            iframe.setAttribute('scrolling', 'no'); 
             
             iframe.onload = () => {
                 loader.style.display = 'none';
                 frame.style.display = 'block';
+                
+                // INJEÇÃO DE SALDO INICIAL NO JOGO (BRIDGE)
+                // Pequeno delay para garantir que o script do jogo carregou
+                setTimeout(() => {
+                    iframe.contentWindow.postMessage({
+                        type: 'INIT_GAME',
+                        balance: userProfile.balance
+                    }, '*');
+                }, 500);
             };
             
             frame.appendChild(iframe);
         } else {
-            // Fallback
             setTimeout(() => {
                 loader.style.display = 'none';
                 frame.style.display = 'flex';
@@ -86,6 +95,7 @@ export function closeGameLauncher() {
         modal.style.display = 'none';
         const frame = document.querySelector('.game-frame-placeholder');
         if(frame) frame.innerHTML = ''; 
+        // Em produção: recarregar saldo do servidor para garantir sincronia
     }
 }
 
@@ -96,7 +106,6 @@ export function renderGames(containerId, filter = 'all') {
     
     let filteredList = gamesList;
     
-    // Filtro simples baseado em provider/nome para demonstração
     if (filter === 'slots') {
         filteredList = gamesList.filter(g => g.name.toLowerCase().includes('slot') || g.name.toLowerCase().includes('fortune') || g.name.toLowerCase().includes('gates'));
     } else if (filter === 'crash') {
@@ -125,7 +134,6 @@ export function renderDeposit(containerId) {
     `).join('');
 }
 
-// Render Tasks Gamificada
 export function renderTasks(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -160,9 +168,8 @@ export function updateUserUI() {
     
     if (balEl) balEl.textContent = val;
     if (balDisplay) balDisplay.textContent = val;
-    if (withdrawAvail) withdrawAvail.textContent = val;
+    if (withdrawAvail) withdrawAvail.textContent = val; // Correção Saque
 
-    // Atualiza Profile ID/Nome
     const idDisplay = document.getElementById('profile-id-display');
     const nameDisplay = document.getElementById('profile-name');
     
@@ -176,11 +183,11 @@ export function switchPage(targetId) {
     if (target) {
         target.classList.add('active');
         window.scrollTo(0,0);
+        // Se mudou para saque, atualiza UI novamente para garantir
+        if(targetId === 'saque' || targetId === 'perfil') updateUserUI();
     }
     
-    // Atualiza Nav
     document.querySelectorAll('.nav-item').forEach(item => {
-        // Lógica para lidar com o botão central que aponta pra depósito
         const t = item.dataset.target || item.dataset.nav;
         if(t === targetId) item.classList.add('active');
         else item.classList.remove('active');

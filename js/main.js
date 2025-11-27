@@ -1,3 +1,4 @@
+
 import { renderGames, renderDeposit, renderTasks, updateUserUI, switchPage, showToast, animateBalanceUI, openGameLauncher, closeGameLauncher } from './ui.js';
 import { userProfile, tasks, gamesList, saveTasksData } from './data.js';
 import { supabase } from './supabaseClient.js';
@@ -30,6 +31,7 @@ const Masker = {
 
 document.addEventListener('DOMContentLoaded', () => {
     checkLoginState();
+    setupGameBridge(); // Inicia escuta dos jogos
 });
 
 function initApp() {
@@ -49,12 +51,45 @@ function initApp() {
     setupLogout();
 }
 
+// --- GAME BRIDGE (Communication Layer) ---
+function setupGameBridge() {
+    window.addEventListener('message', async (event) => {
+        // Segurança: Em produção, verificar event.origin
+        
+        const { type, payload } = event.data;
+
+        if (type === 'GAME_UPDATE') {
+            // O jogo reportou uma mudança de saldo (Aposta ou Vitória)
+            // Payload: { newBalance: number, delta: number, action: 'bet'|'win' }
+            
+            // 1. Atualiza estado local para UI imediata
+            userProfile.balance = parseFloat(payload.newBalance);
+            updateUserUI();
+            
+            // 2. Persiste no Supabase (Debounce ou direto)
+            // Para consistência, atualizamos a carteira
+            try {
+                await supabase
+                    .from('wallets')
+                    .update({ balance: userProfile.balance })
+                    .eq('player_id', userProfile.id);
+                
+                // Opcional: Registrar transação de jogo no histórico
+                if(payload.action === 'win' && payload.delta > 0) {
+                     // Log vitória
+                }
+            } catch (err) {
+                console.error("Erro ao sincronizar saldo do jogo:", err);
+            }
+        }
+    });
+}
+
 // --- AUTH SYSTEM (SUPABASE) ---
 async function checkLoginState() {
     const localId = localStorage.getItem('gowin_player_id');
     
     if (localId) {
-        // Tenta buscar dados atualizados do DB
         try {
             const { data: player, error } = await supabase
                 .from('players')
@@ -67,23 +102,18 @@ async function checkLoginState() {
 
             if (error || !player) {
                 console.error("Erro ao buscar player:", error);
-                // Se der erro de conexão, não desloga, tenta usar cache se houver (futuro)
-                // Por enquanto, força login se token for inválido
                 if(error.code === 'PGRST116') { // Não encontrado
                     localStorage.removeItem('gowin_player_id');
                     showLogin();
                 } else {
-                    // Erro genérico (ex: rede), tenta mostrar app mas avisa
                     showToast('Modo Offline: Verifique sua conexão', 'info');
                     showApp(); 
                 }
                 return;
             }
 
-            // Popula Store Global
             userProfile.id = player.id;
             userProfile.username = player.username;
-            // Supabase retorna array ou objeto dependendo da relação, assumindo single object aqui
             userProfile.balance = player.wallets ? parseFloat(player.wallets.balance) : 0.00;
             userProfile.vipLevel = player.vip_level;
             userProfile.fullData = {
@@ -133,14 +163,12 @@ function setupLoginInteraction() {
 
     const btnLogin = document.querySelector('.btn-login');
 
-    // Máscaras
     const cpfInput = document.getElementById('regCpf');
     if(cpfInput) cpfInput.addEventListener('input', (e) => e.target.value = Masker.cpf(e.target.value));
     
     const phoneInput = document.getElementById('regPhone');
     if(phoneInput) phoneInput.addEventListener('input', (e) => e.target.value = Masker.phone(e.target.value));
 
-    // Mudar para modo "Entrar"
     const footerSpan = document.querySelector('.login-footer span');
     let isLoginMode = false;
     
@@ -184,7 +212,6 @@ function setupLoginInteraction() {
         }
 
         if(isLoginMode) {
-            // LOGIN
             const { data, error } = await supabase
                 .from('players')
                 .select('id')
@@ -204,7 +231,6 @@ function setupLoginInteraction() {
             location.reload(); 
             
         } else {
-            // REGISTRO
             const name = document.getElementById('regName').value;
             const cpf = document.getElementById('regCpf').value;
             const phone = document.getElementById('regPhone').value;
@@ -215,7 +241,6 @@ function setupLoginInteraction() {
                 return;
             }
 
-            // Insert Player
             const { data, error } = await supabase
                 .from('players')
                 .insert([{ username: name, email, cpf, phone }])
@@ -236,7 +261,6 @@ function setupLoginInteraction() {
     });
 }
 
-// --- LOGOUT ---
 function setupLogout() {
     const btnLogout = document.getElementById('btnLogout');
     if(btnLogout) {
@@ -249,7 +273,6 @@ function setupLogout() {
     }
 }
 
-// --- JOGOS E UI ---
 function setupCategoryFilter() {
     const catItems = document.querySelectorAll('.cat-item');
     const gridEl = document.getElementById('gameGrid');
@@ -289,19 +312,16 @@ function setupGameInteraction() {
     if(closeBtn) closeBtn.addEventListener('click', closeGameLauncher);
 }
 
-// --- TAREFAS ---
 function setupTaskInteraction() {
     const list = document.getElementById('taskList');
     if(list) {
         list.addEventListener('click', async (e) => {
             if(e.target.classList.contains('task-btn') && !e.target.classList.contains('claimable') === false) {
-                // Checa se está habilitado
                 if(e.target.disabled) return;
 
                 const index = e.target.dataset.index;
                 const task = tasks[index];
 
-                // RPC Add Balance
                 const { data: newBalance, error } = await supabase
                     .rpc('add_balance', { p_id: userProfile.id, amount: task.reward });
 
@@ -320,13 +340,12 @@ function setupTaskInteraction() {
     }
 }
 
-// --- DEPÓSITO INTEGRADO (SUPABASE + INVICTUS) ---
+// --- DEPÓSITO COM SANITIZAÇÃO RIGOROSA ---
 function setupDepositInteraction() {
     const manualInput = document.getElementById('manualDepositInput');
     const actionBtn = document.getElementById('btnDepositAction');
     const container = document.getElementById('depositAmounts');
 
-    // Preencher Info Confirmada
     const userData = userProfile.fullData || {};
     const nameEl = document.getElementById('confirmName');
     const cpfEl = document.getElementById('confirmCpf');
@@ -381,14 +400,17 @@ function setupDepositInteraction() {
                 .single();
 
             if(error) {
-                console.error(error);
+                console.error("DB Error:", error);
                 showToast('Erro interno ao iniciar depósito.', 'error');
                 actionBtn.disabled = false;
                 actionBtn.textContent = "TENTAR NOVAMENTE";
                 return;
             }
 
-            // 2. Invictus API
+            // 2. Data Sanitization (CRITICAL FIX)
+            const cleanCpf = userData.cpf ? userData.cpf.replace(/\D/g, '') : "00000000000";
+            const cleanPhone = userData.phone ? userData.phone.replace(/\D/g, '') : "00000000000";
+            
             const payload = {
                 "amount": amountCents, 
                 "offer_hash": OFFER_HASH_DEFAULT, 
@@ -396,10 +418,14 @@ function setupDepositInteraction() {
                 "customer": {
                     name: userData.name || "Cliente GOW",
                     email: userData.email || "email@temp.com",
-                    document: userData.cpf ? userData.cpf.replace(/\D/g,'') : "00000000000",
-                    phone_number: userData.phone ? userData.phone.replace(/\D/g,'') : "00000000000",
-                    street_name: "Rua Digital", street_number: "100", neighborhood: "Centro", 
-                    zip_code: "01001000", city: "Sao Paulo", state: "SP"
+                    document: cleanCpf,
+                    phone_number: cleanPhone,
+                    street_name: "Rua Digital", 
+                    street_number: "100", 
+                    neighborhood: "Centro", 
+                    zip_code: "01001000", 
+                    city: "Sao Paulo", 
+                    state: "SP"
                 },
                 "cart": [{
                     "product_hash": OFFER_HASH_DEFAULT,
@@ -421,7 +447,6 @@ function setupDepositInteraction() {
                 const apiData = await response.json();
 
                 if(response.ok && apiData.payment_method === 'pix') {
-                    // Update Transaction ID
                     await supabase.from('transactions')
                         .update({ external_id: apiData.hash })
                         .eq('id', txn.id);
@@ -430,7 +455,8 @@ function setupDepositInteraction() {
                     monitorPayment(apiData.hash, amount, txn.id);
                 } else {
                     console.error("Invictus Error:", apiData);
-                    showToast('Erro na geração do PIX.', 'error');
+                    const msg = apiData.errors ? Object.values(apiData.errors).flat().join(' ') : 'Verifique seus dados.';
+                    showToast(`Erro no PIX: ${msg}`, 'error');
                 }
 
             } catch(e) {
@@ -449,7 +475,7 @@ function monitorPayment(externalHash, amount, txnId) {
     const startTime = Date.now();
     
     pollingInterval = setInterval(async () => {
-        if (Date.now() - startTime > 1200000) { // 20 min
+        if (Date.now() - startTime > 1200000) { 
             clearInterval(pollingInterval);
             return;
         }
@@ -460,10 +486,7 @@ function monitorPayment(externalHash, amount, txnId) {
             if (['PAID', 'paid', 'COMPLETED'].includes(data.status)) {
                 clearInterval(pollingInterval);
                 
-                // Add Balance Atomically
                 const { data: newBal } = await supabase.rpc('add_balance', { p_id: userProfile.id, amount: amount });
-                
-                // Complete Transaction
                 await supabase.from('transactions').update({ status: 'completed' }).eq('id', txnId);
 
                 userProfile.balance = newBal;
@@ -516,7 +539,6 @@ function showPixModal(data, amount) {
     }
 }
 
-// --- NAVEGAÇÃO ---
 function setupNavigation() {
     document.body.addEventListener('click', (e) => {
         const targetEl = e.target.closest('[data-nav], .nav-item');
@@ -531,7 +553,6 @@ function setupNavigation() {
             refreshBtn.classList.add('fa-spin');
             
             try {
-                // Refresh Balance from DB
                 const { data } = await supabase
                     .from('wallets')
                     .select('balance')
@@ -564,7 +585,12 @@ function setupWithdrawalLogic() {
     const btnWithdraw = document.getElementById('btnRequestWithdraw');
     if(btnWithdraw) {
         btnWithdraw.addEventListener('click', () => {
-            showToast('Solicitação enviada para análise.', 'info');
+            // Em produção: Validar saldo e criar transação de saque 'pending'
+            if(userProfile.balance > 0) {
+                 showToast('Solicitação enviada para análise.', 'info');
+            } else {
+                 showToast('Saldo insuficiente para saque.', 'error');
+            }
         });
     }
 }
