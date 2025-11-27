@@ -126,40 +126,39 @@ body {
     justify-content: center;
     transition: 0.2s;
     box-shadow: 0 4px 0 #150f20;
+    font-size: 32px; /* Base icon size */
+    color: #554075;
 }
 .egg-box:active { transform: translateY(2px); box-shadow: 0 2px 0 #150f20; }
 
-.egg-content {
-    width: 60%;
-    height: 60%;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-/* OVO DE DRAGÃO (Default) */
-.egg-default {
-    background-image: url('https://cdn-icons-png.flaticon.com/512/822/822123.png');
-    filter: drop-shadow(0 0 5px rgba(255, 159, 26, 0.3));
-}
-
-/* DIAMANTE (Vitória) */
-.egg-diamond {
-    background-image: url('https://cdn-icons-png.flaticon.com/512/9754/9754898.png');
-    filter: drop-shadow(0 0 10px var(--gold));
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* DRAGÃO (Derrota) */
-.egg-dragon {
-    background-image: url('https://cdn-icons-png.flaticon.com/512/10003/10003755.png');
-    filter: drop-shadow(0 0 10px var(--dragon-red));
-    animation: shake 0.4s ease-in-out;
+/* States using pseudo-elements for icons */
+.egg-box::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f7fb"; /* Egg */
+    transition: all 0.3s;
 }
 
 .egg-box.revealed { background: #332447; border-color: #554075; pointer-events: none; }
-.egg-box.bad { background: #4a1515; border-color: var(--dragon-red); }
-.egg-box.good { background: #1a4a2e; border-color: var(--safe-green); }
+
+.egg-box.good { 
+    background: #1a4a2e; border-color: var(--safe-green); 
+    color: var(--gold);
+}
+.egg-box.good::before {
+    content: "\f3a5"; /* Gem */
+    animation: popIn 0.3s;
+    filter: drop-shadow(0 0 5px var(--gold));
+}
+
+.egg-box.bad { 
+    background: #4a1515; border-color: var(--dragon-red); 
+    color: var(--dragon-red);
+}
+.egg-box.bad::before {
+    content: "\f6d5"; /* Dragon */
+    animation: shake 0.4s;
+}
 
 .game-controls {
     background: #151020;

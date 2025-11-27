@@ -1,18 +1,16 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- ASSETS REAIS (God of War PNGs) ---
   const SYMBOLS = [
-    { id: 'axe', img: 'https://cdn-icons-png.flaticon.com/512/820/820050.png', weight: 75, mult3: 0.8, mult4: 1.2 },
-    { id: 'shield', img: 'https://cdn-icons-png.flaticon.com/512/3063/3063063.png', weight: 40, mult3: 1.5, mult4: 3 },
-    { id: 'blades', img: 'https://cdn-icons-png.flaticon.com/512/836/836279.png', weight: 25, mult3: 3, mult4: 6 },
-    { id: 'omega', img: 'https://cdn-icons-png.flaticon.com/512/483/483863.png', weight: 5, mult3: 50, mult4: 100 }
+    { id: 'axe', icon: 'fas fa-hammer', color: '#3498db', weight: 75, mult3: 0.8, mult4: 1.2 },
+    { id: 'shield', icon: 'fas fa-shield-halved', color: '#f39c12', weight: 40, mult3: 1.5, mult4: 3 },
+    { id: 'blades', icon: 'fas fa-fire', color: '#e74c3c', weight: 25, mult3: 3, mult4: 6 },
+    { id: 'omega', icon: 'fas fa-om', color: '#c0392b', weight: 5, mult3: 50, mult4: 100 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
   const PAYOUT_BY_ID = Object.fromEntries(SYMBOLS.map(s => [s.id, { mult3: s.mult3 }]));
   const ID_LIST = SYMBOLS.map(s => s.id);
-  const PLACEHOLDERS = { axe: '', shield: '', blades: '', omega: '' };
 
   let balance = 0.0;
   let bet = 2.0;
@@ -44,12 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const payoutsEl = document.getElementById('payouts');
   const totalWinEl = document.getElementById('totalWin');
   const totalBetEl = document.getElementById('totalBet');
-  const balanceScaleText = document.getElementById('balanceScaleText');
-  const balanceScaleGreen = document.getElementById('balanceScaleGreen');
-  const balanceScaleRed = document.getElementById('balanceScaleRed');
 
   if(!spinBtn || reelsEls.length === 0) return;
-  const reelImages = reelsEls.map(reel => [...reel.querySelectorAll('.cell img')]);
+  const reelCells = reelsEls.map(reel => [...reel.querySelectorAll('.cell')]);
 
   function formatMoney(val){ return `R$ ${Number(val || 0).toFixed(1)}`; }
   function getRandomSymbolID(){ return ID_LIST[Math.floor(Math.random()*ID_LIST.length)]; }
@@ -60,18 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const mult3 = PAYOUT_BY_ID[s.id].mult3;
       const card = document.createElement('div');
       card.className = 'payout-card';
-      card.innerHTML = `<img src="${s.img}" onerror="this.src='${PLACEHOLDERS[s.id]}'">
+      card.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size:20px;"></i>
         <div class="mult" style="margin-top:4px;">3x = ${mult3}</div><div class="value">${formatMoney(bet * mult3)}</div>`;
       payoutsEl.appendChild(card);
     });
-  }
-
-  function updateBalanceScale(){
-    const lucroLiquido = totalWinAccum - totalBetAccum;
-    const pct = totalBetAccum ? (lucroLiquido / totalBetAccum) * 100 : 0;
-    balanceScaleText.textContent = pct >= 0 ? `Honra: ${Math.round(pct)}%` : `Dívida: ${Math.round(pct)}%`;
-    balanceScaleGreen.style.width = pct >= 0 ? `${Math.min(50+(pct/2), 100)}%` : '50%';
-    balanceScaleRed.style.width = pct < 0 ? `${Math.min(50+(Math.abs(pct)/2), 100)}%` : '50%';
   }
 
   function canSpin(){ return !spinning && Number.isFinite(bet) && bet > 0 && bet <= balance; }
@@ -84,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPayoutCards();
     totalWinEl.textContent = `Win: ${formatMoney(totalWinAccum)}`;
     totalBetEl.textContent = `Oferenda: ${formatMoney(totalBetAccum)}`;
-    updateBalanceScale();
     spinBtn.disabled = !canSpin();
   }
 
@@ -101,6 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let win = 0;
     const rows = results[0].length;
     const cols = results.length;
+    
+    // Reset visual
+    document.querySelectorAll('.cell i').forEach(el => {
+        el.style.transform = 'scale(1)';
+        el.style.textShadow = 'none';
+    });
+
     for (let row = 0; row < rows; row++) {
         const symbolID = results[0][row];
         let count = 1;
@@ -110,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (count >= 3 && PAYOUT_BY_ID[symbolID]) {
             win += bet * PAYOUT_BY_ID[symbolID].mult3;
+            // Win Animation
+             for(let i=0; i<count; i++){
+                const icon = reelCells[i][row].querySelector('i');
+                icon.style.transform = 'scale(1.5)';
+                icon.style.textShadow = `0 0 10px ${SYMBOLS_MAP[symbolID].color}`;
+            }
         }
     }
     
@@ -125,9 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function spinReels(results) {
     spinning = true;
     reelsEls.forEach((reelEl, colIdx) => {
-      const imgs = reelImages[colIdx];
+      const cells = reelCells[colIdx];
+      
+      // Animação de giro (Shake)
+      reelEl.style.transform = 'translateY(-10px)';
+      
       setTimeout(() => {
-          imgs.forEach((img, i) => img.src = SYMBOLS_MAP[results[colIdx][i]].img);
+          reelEl.style.transform = 'translateY(0)';
+          cells.forEach((cell, i) => { 
+              const s = SYMBOLS_MAP[results[colIdx][i]];
+              cell.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size:36px; filter: drop-shadow(2px 4px 6px #000);"></i>`;
+          });
           if (colIdx === reelsEls.length - 1) {
             fullComputeWin(results);
             spinning = false;

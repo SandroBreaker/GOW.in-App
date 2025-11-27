@@ -50,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateCrashPoint() {
         const r = Math.random();
-        let crash = 0.96 / (1 - r);
+        // Curva ajustada para permitir voos mais longos ocasionalmente
+        let crash = 0.99 / (1 - r);
         if (crash < 1.00) crash = 1.00;
         if (crash > 1000) crash = 1000;
         return crash;
@@ -150,7 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function animate() {
         const now = Date.now();
         const diff = now - startTime;
-        currentMultiplier = 1.00 + (0.00006 * Math.pow(diff, 1.6));
+        
+        // UX FIX: Curva de crescimento suavizada (Logarítmica no início, exponencial depois)
+        // Isso evita que o avião "decole" rápido demais nos primeiros 2 segundos
+        const speedFactor = 0.00004; // Reduzido de 0.00006
+        currentMultiplier = 1.00 + (speedFactor * Math.pow(diff, 1.5)); // Exponente reduzido de 1.6
         
         if (currentMultiplier >= crashPoint) {
             currentMultiplier = crashPoint;
@@ -163,23 +168,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if(userStatus === 'BET_PLACED') lblSub.textContent = (betAmount * currentMultiplier).toFixed(2) + " R$";
 
         ctx.clearRect(0, 0, width, height);
-        let progress = Math.min(1, diff / 5000); 
-        let drawX = progress * (width - 60);
-        let drawY = height - (progress * (height - 60));
         
-        const curveX = (diff / 100) * 2; 
-        const curveY = height - ((currentMultiplier - 1) * 100);
-        let visualX = Math.min(width - 80, curveX);
-        let visualY = Math.max(80, curveY);
+        // UX FIX: Animação do avião mais suave no canvas
+        let progress = Math.min(1, diff / 8000); // Demora mais para chegar no topo da tela (8s)
         
+        // Curva visual suave
+        let drawX = progress * (width - 80);
+        let drawY = height - (Math.pow(progress, 0.5) * (height - 100));
+        
+        // Rastro Vermelho
         ctx.beginPath();
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 4;
         ctx.strokeStyle = '#e94358';
         ctx.moveTo(0, height);
-        ctx.quadraticCurveTo(visualX / 2, height, visualX, visualY);
+        // Bezier para curva perfeita
+        ctx.quadraticCurveTo(drawX * 0.4, height, drawX + 20, drawY + 40);
         ctx.stroke();
         
-        ctx.drawImage(planeImg, visualX - 10, visualY - 30, 60, 60);
+        // Fundo gradiente do rastro
+        ctx.lineTo(drawX + 20, height);
+        ctx.lineTo(0, height);
+        ctx.fillStyle = "rgba(233, 67, 88, 0.1)";
+        ctx.fill();
+
+        // Desenha Avião
+        ctx.drawImage(planeImg, drawX, drawY, 50, 50);
+        
         animationId = requestAnimationFrame(animate);
     }
 

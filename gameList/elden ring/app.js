@@ -1,19 +1,16 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- ASSETS REAIS (Elden Ring PNGs) ---
   const SYMBOLS = [
-    { id: 'rune', img: 'https://cdn-icons-png.flaticon.com/512/2190/2190532.png', weight: 75, mult3: 0.1, mult4: 0.2, mult5: 1.5 },
-    { id: 'grace', img: 'https://cdn-icons-png.flaticon.com/512/766/766023.png', weight: 40, mult3: 0.3, mult4: 0.5, mult5: 4 },
-    { id: 'erdtree', img: 'https://cdn-icons-png.flaticon.com/512/2424/2424751.png', weight: 20, mult3: 0.5, mult4: 1.2, mult5: 8 },
-    { id: 'pot', img: 'https://cdn-icons-png.flaticon.com/512/3093/3093952.png', weight: 5, mult3: 6, mult4: 15, mult5: 40 },
-    { id: 'ring', img: 'https://cdn-icons-png.flaticon.com/512/1651/1651722.png', weight: 4, mult3: 15, mult4: 80, mult5: 400 }
+    { id: 'rune', icon: 'fas fa-ring', color: '#f1c40f', weight: 75, mult3: 0.1, mult4: 0.2, mult5: 1.5 },
+    { id: 'grace', icon: 'fas fa-sun', color: '#ecf0f1', weight: 40, mult3: 0.3, mult4: 0.5, mult5: 4 },
+    { id: 'erdtree', icon: 'fas fa-tree', color: '#2ecc71', weight: 20, mult3: 0.5, mult4: 1.2, mult5: 8 },
+    { id: 'pot', icon: 'fas fa-jar', color: '#e67e22', weight: 5, mult3: 6, mult4: 15, mult5: 40 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
   const PAYOUT_BY_ID = Object.fromEntries(SYMBOLS.map(s => [s.id, { mult3: s.mult3, mult4: s.mult4, mult5: s.mult5 }]));
   const ID_LIST = SYMBOLS.map(s => s.id);
-  const PLACEHOLDERS = { rune: '', grace: '', erdtree: '', pot: '', ring: '' };
 
   let balance = 0.0;
   let bet = 2.0;
@@ -45,12 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const payoutsEl = document.getElementById('payouts');
   const totalWinEl = document.getElementById('totalWin');
   const totalBetEl = document.getElementById('totalBet');
-  const balanceScaleText = document.getElementById('balanceScaleText');
-  const balanceScaleGreen = document.getElementById('balanceScaleGreen');
-  const balanceScaleRed = document.getElementById('balanceScaleRed');
 
   if(!spinBtn || reelsEls.length === 0) return;
-  const reelImages = reelsEls.map(reel => [...reel.querySelectorAll('.cell img')]);
+  const reelCells = reelsEls.map(reel => [...reel.querySelectorAll('.cell')]);
 
   function formatMoney(val){ return `R$ ${Number(val || 0).toFixed(1)}`; }
   function getRandomSymbolID(){ return ID_LIST[Math.floor(Math.random()*ID_LIST.length)]; }
@@ -61,18 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = PAYOUT_BY_ID[s.id];
       const card = document.createElement('div');
       card.className = 'payout-card';
-      card.innerHTML = `<img src="${s.img}" onerror="this.src='${PLACEHOLDERS[s.id]}'">
+      card.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size:20px;"></i>
         <div class="mult">5x: ${p.mult5}</div><div class="value">Max: ${formatMoney(bet * p.mult5)}</div>`;
       payoutsEl.appendChild(card);
     });
-  }
-
-  function updateBalanceScale(){
-    const lucroLiquido = totalWinAccum - totalBetAccum;
-    const pct = totalBetAccum ? (lucroLiquido / totalBetAccum) * 100 : 0;
-    balanceScaleText.textContent = pct >= 0 ? `Grace: ${Math.round(pct)}%` : `Dano: ${Math.round(pct)}%`;
-    balanceScaleGreen.style.width = pct >= 0 ? `${Math.min(50+(pct/2), 100)}%` : '50%';
-    balanceScaleRed.style.width = pct < 0 ? `${Math.min(50+(Math.abs(pct)/2), 100)}%` : '50%';
   }
 
   function canSpin(){ return !spinning && Number.isFinite(bet) && bet > 0 && bet <= balance; }
@@ -85,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPayoutCards();
     totalWinEl.textContent = `Runas: ${formatMoney(totalWinAccum)}`;
     totalBetEl.textContent = `Gastas: ${formatMoney(totalBetAccum)}`;
-    updateBalanceScale();
     spinBtn.disabled = !canSpin();
   }
 
@@ -102,6 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let win = 0;
     const rows = results[0].length;
     const cols = results.length;
+    
+    // Reset effects
+    document.querySelectorAll('.cell').forEach(c => {
+        c.style.background = 'transparent';
+        c.style.boxShadow = 'none';
+    });
+
     for (let row = 0; row < rows; row++) {
         const symbolID = results[0][row];
         if(!PAYOUT_BY_ID[symbolID]) continue;
@@ -114,6 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const p = PAYOUT_BY_ID[symbolID];
             let mult = count === 3 ? p.mult3 : count === 4 ? p.mult4 : p.mult5;
             win += bet * mult;
+            
+            // Elden Ring Glow Effect
+            for(let i=0; i<count; i++){
+                reelCells[i][row].style.background = 'rgba(241, 196, 15, 0.1)';
+                reelCells[i][row].style.boxShadow = 'inset 0 0 10px #f1c40f';
+            }
         }
     }
 
@@ -129,9 +127,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function spinReels(results) {
     spinning = true;
     reelsEls.forEach((reelEl, colIdx) => {
-      const imgs = reelImages[colIdx];
+      const cells = reelCells[colIdx];
+      // Fade out
+      cells.forEach(c => c.style.opacity = '0.5');
+      
       setTimeout(() => {
-          imgs.forEach((img, i) => img.src = SYMBOLS_MAP[results[colIdx][i]].img);
+          cells.forEach((cell, i) => { 
+              cell.style.opacity = '1';
+              const s = SYMBOLS_MAP[results[colIdx][i]];
+              cell.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size:32px; filter: drop-shadow(0 0 5px ${s.color});"></i>`;
+          });
           if (colIdx === reelsEls.length - 1) {
             fullComputeWin(results);
             spinning = false;

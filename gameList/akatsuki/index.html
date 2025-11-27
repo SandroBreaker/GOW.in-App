@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -12,7 +13,6 @@
   <header class="header">
     <div class="brand">
       <div class="logo">AKAT<span>SUKI</span></div>
-      <div id="lastResult" class="last-result">Mundo de Sonhos: —</div>
       <div class="subtitle">Shinra Tensei!</div>
     </div>
 
@@ -39,39 +39,36 @@
     <div class="slot-wrapper">
       <div class="machine">
         <div class="reels" id="reels">
-          <!-- Reels preenchidos via JS ou placeholder inicial -->
           <div class="reel" id="r0">
-            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><i class="fas fa-cloud"></i></div>
+            <div class="cell"><i class="fas fa-eye"></i></div>
+            <div class="cell"><i class="fas fa-scroll"></i></div>
+            <div class="cell"><i class="fas fa-khanda"></i></div>
           </div>
           <div class="reel" id="r1">
-            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><i class="fas fa-cloud"></i></div>
+            <div class="cell"><i class="fas fa-eye"></i></div>
+            <div class="cell"><i class="fas fa-scroll"></i></div>
+            <div class="cell"><i class="fas fa-khanda"></i></div>
           </div>
           <div class="reel" id="r2">
-            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><i class="fas fa-cloud"></i></div>
+            <div class="cell"><i class="fas fa-eye"></i></div>
+            <div class="cell"><i class="fas fa-scroll"></i></div>
+            <div class="cell"><i class="fas fa-khanda"></i></div>
           </div>
           <div class="reel" id="r3">
-            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><i class="fas fa-cloud"></i></div>
+            <div class="cell"><i class="fas fa-eye"></i></div>
+            <div class="cell"><i class="fas fa-scroll"></i></div>
+            <div class="cell"><i class="fas fa-khanda"></i></div>
           </div>
            <div class="reel" id="r4">
-            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
-            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><i class="fas fa-cloud"></i></div>
+            <div class="cell"><i class="fas fa-eye"></i></div>
+            <div class="cell"><i class="fas fa-scroll"></i></div>
+            <div class="cell"><i class="fas fa-khanda"></i></div>
           </div>
-
-          <canvas id="hlCanvas" class="hl-canvas" aria-hidden="true"></canvas>
         </div>
       </div>
     </div>
@@ -82,16 +79,6 @@
           <button id="decBet" class="tiny">−</button>
           <div class="bet-value" id="betValue">R$ 2,00</div>
           <button id="incBet" class="tiny">+</button>
-        </div>
-
-        <div class="volatility">
-          <label>
-            <select id="volatility">
-              <option value="low">Genin</option>
-              <option value="medium" selected>Jounin</option>
-              <option value="high">Kage</option>
-            </select>
-          </label>
         </div>
       </div>
 
@@ -106,8 +93,6 @@
       <button id="spinBtn" class="spin-btn">INVOCAR</button>
     </div>
   </section>
-
-  <canvas id="confetti" class="confetti-canvas"></canvas>
 </main>
 <script src="app.js"></script>
 </body>

@@ -16,9 +16,8 @@
 html,body{
   height:100%; width: 100%; margin:0; padding:0;
   font-family:'Inter', sans-serif;
-  overflow: hidden; /* CRUCIAL: Impede scroll no iframe */
+  overflow: hidden; 
   background: #000; 
-  position: fixed; /* Trava no viewport do iframe */
 }
 
 body {
@@ -35,7 +34,7 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
 /* Container Flexível de Altura Total */
 .container{
   width:100vw; 
-  height: 100dvh; /* Dynamic Viewport Height */
+  height: 100dvh; 
   padding: 10px;
   display:flex; 
   flex-direction:column;
@@ -57,15 +56,9 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
 }
 .logo span { color: var(--gold); }
 
-.subtitle{
-  font-size: 10px; color: var(--purple); opacity:0.9;
-  font-style: italic; display: none; 
-}
-
 .status{ font-size: 12px; text-align:right; }
 .status span{ display:inline-block; margin-left:6px; color: #fff; font-weight: 600; }
 
-/* Barras */
 .balance-scale-wrapper{
   position: relative; height: 8px; 
   background: #333; overflow: hidden; margin: 4px 0; border: 1px solid #555;
@@ -78,15 +71,14 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
   top:50%; transform:translateY(-50%); z-index: 2;
 }
 
-/* Content */
+/* Content - FIX LAYOUT VERTICAL */
 .content{
-  flex:1; 
+  flex: 1; /* Ocupa todo o espaço restante */
   display:flex; 
   flex-direction:column; 
-  justify-content: center; 
+  justify-content: space-between; /* Distribui conteúdo */
   gap: 5px;
   min-height: 0;
-  overflow: hidden; /* Previne overflow interno */
 }
 
 /* Payouts */
@@ -102,24 +94,22 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
   padding: 4px; width: 18%;
   display:flex; flex-direction:column; align-items:center;
 }
-.payout-card img {
-  width: 25px; height: 25px;
-  object-fit: contain;
-  margin-bottom: 2px;
+.payout-card i {
+    text-shadow: 0 0 5px currentColor;
 }
 .payout-card .mult{ font-weight:900; color:var(--gold); font-size: 10px; }
 .payout-card .value{ font-size: 9px; color:#fff; opacity: 0.7; }
 
-/* Slot Machine */
+/* Slot Machine - FIX */
 .slot-wrapper{
   display:flex; justify-content:center; 
-  flex: 1; 
-  min-height: 0; 
+  flex-grow: 1; /* Cresce para ocupar o espaço vazio */
+  min-height: 200px;
   align-items: center;
   position: relative;
 }
 .machine{
-  width:100%; max-width: 400px; /* Max width menor para mobile */
+  width:100%; max-width: 400px; 
   height: 100%; 
   padding: 8px;
   background: #000; border: 2px solid #333;
@@ -144,14 +134,47 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
   width:100%; height: 25%;
   display:flex; align-items:center; justify-content:center;
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.2s;
 }
 
-.symbol-img { width: 80%; height: 80%; object-fit: contain; }
+/* ANIMATIONS */
+.cell.blur i {
+    filter: blur(5px);
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+.cell.win i {
+    animation: winPulse 0.8s infinite alternate;
+    filter: drop-shadow(0 0 10px currentColor);
+}
+
+.cell.win {
+    background: rgba(214, 48, 49, 0.1);
+}
+
+@keyframes winPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.3) rotate(10deg); }
+}
+
+.blur-effect {
+    width: 20px; height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    opacity: 0.5;
+    animation: spinLine 0.2s infinite linear;
+}
+
+@keyframes spinLine {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
 
 /* Controls */
 .info-row{
   display:flex; gap: 10px; align-items:center; justify-content:space-between; 
-  margin-top: 5px; flex-shrink: 0;
+  margin-top: auto; /* Empurra para o fundo se houver espaço */
+  flex-shrink: 0;
 }
 .bet-controls{
   display:flex; align-items:center; gap: 4px; background: #111;
@@ -159,10 +182,11 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
 }
 .tiny{
   background: var(--gold); color: #fff; border: none;
-  width: 20px; height: 20px; 
+  width: 25px; height: 25px; 
   font-weight: bold; cursor: pointer;
+  border-radius: 4px;
 }
-.bet-value{ color: #fff; min-width: 50px; text-align: center; font-size: 12px; }
+.bet-value{ color: #fff; min-width: 50px; text-align: center; font-size: 14px; font-weight: bold;}
 
 .meta-card { 
   background: #000; border: 1px solid #333; padding: 4px; 
@@ -171,19 +195,21 @@ h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
 
 .button-area { margin-top: 5px; flex-shrink: 0; padding-bottom: 5px; }
 .spin-btn{
-  padding: 12px 0; width: 100%;
+  padding: 15px 0; width: 100%;
   background: linear-gradient(90deg, #000, var(--gold), #000);
   border: 1px solid var(--gold); color: #fff;
-  font-weight:900; font-size: 18px; letter-spacing: 2px;
+  font-weight:900; font-size: 20px; letter-spacing: 2px;
   text-transform: uppercase; cursor:pointer;
+  box-shadow: 0 0 15px rgba(214, 48, 49, 0.4);
 }
+.spin-btn:active { transform: scale(0.98); }
+.spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Utils */
-.hl-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 10; width: 100%; height: 100%; }
 .win-popup {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
   background: rgba(0, 0, 0, 0.95); border: 2px solid var(--gold);
   padding: 20px; color: var(--gold); text-align: center;
   z-index: 99999; font-size: 24px; opacity: 0;
   transition: all 0.4s;
+  box-shadow: 0 0 50px var(--gold);
 }
