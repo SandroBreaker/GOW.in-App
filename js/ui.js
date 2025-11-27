@@ -64,12 +64,12 @@ export function openGameLauncher(gameName, gameUrl = null) {
             iframe.src = gameUrl;
             iframe.setAttribute('scrolling', 'no'); 
             
+            // Evento de carregamento
             iframe.onload = () => {
                 loader.style.display = 'none';
                 frame.style.display = 'block';
                 
                 // INJEÇÃO DE SALDO INICIAL NO JOGO (BRIDGE)
-                // Pequeno delay para garantir que o script do jogo carregou
                 setTimeout(() => {
                     iframe.contentWindow.postMessage({
                         type: 'INIT_GAME',
@@ -77,6 +77,20 @@ export function openGameLauncher(gameName, gameUrl = null) {
                     }, '*');
                 }, 500);
             };
+
+            // FAILSAFE: Se o onload não disparar em 3s, força a exibição
+            // Isso resolve o problema de "Loading Infinito" em alguns navegadores/jogos locais
+            setTimeout(() => {
+                if(loader.style.display !== 'none') {
+                    console.warn("Iframe onload timeout - Forcing display");
+                    loader.style.display = 'none';
+                    frame.style.display = 'block';
+                    iframe.contentWindow.postMessage({
+                        type: 'INIT_GAME',
+                        balance: userProfile.balance
+                    }, '*');
+                }
+            }, 3000);
             
             frame.appendChild(iframe);
         } else {
@@ -95,7 +109,6 @@ export function closeGameLauncher() {
         modal.style.display = 'none';
         const frame = document.querySelector('.game-frame-placeholder');
         if(frame) frame.innerHTML = ''; 
-        // Em produção: recarregar saldo do servidor para garantir sincronia
     }
 }
 
@@ -110,6 +123,8 @@ export function renderGames(containerId, filter = 'all') {
         filteredList = gamesList.filter(g => g.name.toLowerCase().includes('slot') || g.name.toLowerCase().includes('fortune') || g.name.toLowerCase().includes('gates'));
     } else if (filter === 'crash') {
         filteredList = gamesList.filter(g => g.provider === 'CRASH' || g.name.includes('Mines') || g.name.includes('Dragon'));
+    } else if (filter === 'exclusive') {
+        filteredList = gamesList.filter(g => g.provider === 'EXCLUSIVO');
     }
 
     container.innerHTML = filteredList.map(game => `
@@ -140,11 +155,24 @@ export function renderTasks(containerId) {
     
     container.innerHTML = tasks.map((task, index) => {
         const isClaimable = task.status === 'Receber';
-        const btnText = isClaimable ? 'RESGATAR' : '<i class="fas fa-check"></i> FEITO';
-        const iconClass = isClaimable ? 'fa-scroll' : 'fa-check-circle';
+        const isLocked = task.status === 'Bloqueado';
+        const isDone = task.status === 'Resgatado';
+
+        let btnText = 'RESGATAR';
+        let btnClass = 'claimable';
+        let iconClass = 'fa-scroll';
+
+        if (isLocked) {
+            btnText = '<i class="fas fa-lock"></i> BLOQUEADO';
+            btnClass = '';
+        } else if (isDone) {
+            btnText = '<i class="fas fa-check"></i> FEITO';
+            btnClass = '';
+            iconClass = 'fa-check-circle';
+        }
         
         return `
-        <div class="task-card">
+        <div class="task-card" style="${isDone ? 'opacity:0.6' : ''}">
             <div class="task-icon">
                 <i class="fas ${iconClass}"></i>
             </div>
@@ -152,7 +180,7 @@ export function renderTasks(containerId) {
                 <div class="task-title">${task.title}</div>
                 <div class="task-reward">Recompensa: R$ ${task.reward.toFixed(2)}</div>
             </div>
-            <button class="task-btn ${isClaimable ? 'claimable' : ''}" data-index="${index}" ${!isClaimable ? 'disabled' : ''}>
+            <button class="task-btn ${btnClass}" data-index="${index}" ${!isClaimable ? 'disabled' : ''}>
                 ${btnText}
             </button>
         </div>
@@ -168,13 +196,15 @@ export function updateUserUI() {
     
     if (balEl) balEl.textContent = val;
     if (balDisplay) balDisplay.textContent = val;
-    if (withdrawAvail) withdrawAvail.textContent = val; // Correção Saque
+    if (withdrawAvail) withdrawAvail.textContent = val; 
 
     const idDisplay = document.getElementById('profile-id-display');
     const nameDisplay = document.getElementById('profile-name');
+    const imgDisplay = document.getElementById('profile-img');
     
-    if(idDisplay) idDisplay.textContent = userProfile.id;
-    if(nameDisplay) nameDisplay.textContent = userProfile.username;
+    if(idDisplay) idDisplay.textContent = userProfile.id ? userProfile.id.substring(0,8) : '...';
+    if(nameDisplay) nameDisplay.textContent = userProfile.username || 'Jogador';
+    if(imgDisplay && userProfile.username) imgDisplay.src = `https://ui-avatars.com/api/?name=${userProfile.username}&background=random&color=fff`;
 }
 
 export function switchPage(targetId) {
@@ -183,7 +213,6 @@ export function switchPage(targetId) {
     if (target) {
         target.classList.add('active');
         window.scrollTo(0,0);
-        // Se mudou para saque, atualiza UI novamente para garantir
         if(targetId === 'saque' || targetId === 'perfil') updateUserUI();
     }
     

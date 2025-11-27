@@ -1,6 +1,6 @@
 
 import { renderGames, renderDeposit, renderTasks, updateUserUI, switchPage, showToast, animateBalanceUI, openGameLauncher, closeGameLauncher } from './ui.js';
-import { userProfile, tasks, gamesList, saveTasksData } from './data.js';
+import { userProfile, tasks, gamesList, resetTasksLocal } from './data.js';
 import { supabase } from './supabaseClient.js';
 
 // --- CONFIGURAÇÃO ---
@@ -35,10 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
-    // Verificações de segurança para evitar erros em elementos inexistentes
     if(document.getElementById('gameGrid')) renderGames('gameGrid');
     if(document.getElementById('depositAmounts')) renderDeposit('depositAmounts');
-    if(document.getElementById('taskList')) renderTasks('taskList');
+    
+    // Inicia verificação de tasks com DB
+    loadTasksState().then(() => {
+        if(document.getElementById('taskList')) renderTasks('taskList');
+    });
     
     updateUserUI();
 
@@ -54,35 +57,120 @@ function initApp() {
 // --- GAME BRIDGE (Communication Layer) ---
 function setupGameBridge() {
     window.addEventListener('message', async (event) => {
-        // Segurança: Em produção, verificar event.origin
-        
         const { type, payload } = event.data;
 
         if (type === 'GAME_UPDATE') {
-            // O jogo reportou uma mudança de saldo (Aposta ou Vitória)
-            // Payload: { newBalance: number, delta: number, action: 'bet'|'win' }
-            
-            // 1. Atualiza estado local para UI imediata
             userProfile.balance = parseFloat(payload.newBalance);
             updateUserUI();
             
-            // 2. Persiste no Supabase (Debounce ou direto)
-            // Para consistência, atualizamos a carteira
             try {
                 await supabase
                     .from('wallets')
                     .update({ balance: userProfile.balance })
                     .eq('player_id', userProfile.id);
                 
-                // Opcional: Registrar transação de jogo no histórico
                 if(payload.action === 'win' && payload.delta > 0) {
-                     // Log vitória
+                     // Log vitória se necessário
                 }
             } catch (err) {
-                console.error("Erro ao sincronizar saldo do jogo:", err);
+                console.error("Erro ao sincronizar saldo:", err);
             }
         }
     });
+}
+
+// --- QUESTS LOGIC ---
+async function loadTasksState() {
+    if(!userProfile.id) return;
+
+    try {
+        // 1. Busca tasks já reclamadas
+        const { data: claimedTasks, error } = await supabase
+            .from('player_tasks')
+            .select('task_id')
+            .eq('player_id', userProfile.id);
+
+        const claimedIds = claimedTasks ? claimedTasks.map(t => t.task_id) : [];
+
+        // 2. Busca histórico de depósitos para desbloquear task
+        const { data: deposits } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('player_id', userProfile.id)
+            .eq('type', 'DEPOSIT')
+            .eq('status', 'completed')
+            .limit(1);
+        
+        const hasDeposit = deposits && deposits.length > 0;
+
+        // 3. Atualiza estado local das tasks
+        tasks.forEach(task => {
+            if (claimedIds.includes(task.id)) {
+                task.status = "Resgatado";
+            } else {
+                if (task.type === 'check_deposit') {
+                    task.status = hasDeposit ? "Receber" : "Bloqueado";
+                } else {
+                    task.status = "Receber"; // Welcome e Verify Email padrão
+                }
+            }
+        });
+
+    } catch(err) {
+        console.error("Erro ao carregar tasks:", err);
+    }
+}
+
+function setupTaskInteraction() {
+    const list = document.getElementById('taskList');
+    if(list) {
+        list.addEventListener('click', async (e) => {
+            if(e.target.classList.contains('task-btn') && e.target.classList.contains('claimable')) {
+                if(e.target.disabled) return;
+
+                const index = e.target.dataset.index;
+                const task = tasks[index];
+
+                // Lógica Específica por Tipo
+                if (task.type === 'verify_email') {
+                    const code = prompt(`Enviamos um código para ${userProfile.fullData.email || 'seu e-mail'}.\n(Simulação: Digite 1234)`);
+                    if (code !== '1234') {
+                        showToast('Código inválido.', 'error');
+                        return;
+                    }
+                }
+
+                e.target.disabled = true;
+                e.target.textContent = 'Processando...';
+
+                // Adiciona saldo
+                const { data: newBalance, error: balError } = await supabase
+                    .rpc('add_balance', { p_id: userProfile.id, amount: task.reward });
+
+                if (!balError) {
+                    // Marca como feito no DB
+                    const { error: taskError } = await supabase
+                        .from('player_tasks')
+                        .insert([{ player_id: userProfile.id, task_id: task.id }]);
+
+                    if(!taskError) {
+                        userProfile.balance = newBalance;
+                        task.status = "Resgatado";
+                        animateBalanceUI(newBalance);
+                        showToast(`Bônus de R$ ${task.reward.toFixed(2)} resgatado!`, 'success');
+                        renderTasks('taskList');
+                    } else {
+                         // Rollback visual se falhar DB (raro)
+                         showToast('Erro ao salvar progresso.', 'error');
+                         e.target.disabled = false;
+                    }
+                } else {
+                    showToast('Erro ao resgatar bônus.', 'error');
+                    e.target.disabled = false;
+                }
+            }
+        });
+    }
 }
 
 // --- AUTH SYSTEM (SUPABASE) ---
@@ -101,13 +189,12 @@ async function checkLoginState() {
                 .single();
 
             if (error || !player) {
-                console.error("Erro ao buscar player:", error);
-                if(error.code === 'PGRST116') { // Não encontrado
+                if(error && error.code === 'PGRST116') { // Não encontrado
                     localStorage.removeItem('gowin_player_id');
                     showLogin();
                 } else {
-                    showToast('Modo Offline: Verifique sua conexão', 'info');
-                    showApp(); 
+                    // Erro de rede?
+                    showToast('Erro de conexão.', 'error');
                 }
                 return;
             }
@@ -162,16 +249,18 @@ function setupLoginInteraction() {
     if(!form) return;
 
     const btnLogin = document.querySelector('.btn-login');
-
     const cpfInput = document.getElementById('regCpf');
-    if(cpfInput) cpfInput.addEventListener('input', (e) => e.target.value = Masker.cpf(e.target.value));
-    
     const phoneInput = document.getElementById('regPhone');
+    const nameInput = document.getElementById('regName');
+    const termsCheck = document.getElementById('termsCheck');
+
+    if(cpfInput) cpfInput.addEventListener('input', (e) => e.target.value = Masker.cpf(e.target.value));
     if(phoneInput) phoneInput.addEventListener('input', (e) => e.target.value = Masker.phone(e.target.value));
 
     const footerSpan = document.querySelector('.login-footer span');
     let isLoginMode = false;
-    
+
+    // Toggle Mode Logic
     if(footerSpan) {
         footerSpan.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
@@ -179,21 +268,43 @@ function setupLoginInteraction() {
             const terms = document.querySelector('.terms');
             
             if(isLoginMode) {
+                // MODO LOGIN
                 if(subtitle) subtitle.textContent = "Bem-vindo de volta!";
+                
+                // Esconder campos de registro
                 ['regName', 'regCpf', 'regPhone'].forEach(id => {
                     const el = document.getElementById(id);
-                    if(el) el.parentElement.style.display = 'none';
+                    if(el) {
+                        el.parentElement.style.display = 'none';
+                        el.removeAttribute('required'); // IMPORTANTE: Remove obrigatoriedade
+                    }
                 });
-                if(terms) terms.style.display = 'none';
+                
+                if(terms) {
+                    terms.style.display = 'none';
+                    termsCheck.removeAttribute('required');
+                }
+
                 if(btnLogin) btnLogin.textContent = "ENTRAR";
                 footerSpan.textContent = "Criar Conta";
+
             } else {
+                // MODO REGISTRO
                 if(subtitle) subtitle.textContent = "Jogue. Conquiste. Lucre.";
+                
                 ['regName', 'regCpf', 'regPhone'].forEach(id => {
                     const el = document.getElementById(id);
-                    if(el) el.parentElement.style.display = 'block';
+                    if(el) {
+                        el.parentElement.style.display = 'block';
+                        el.setAttribute('required', 'true'); // Restaura obrigatoriedade
+                    }
                 });
-                if(terms) terms.style.display = 'flex';
+                
+                if(terms) {
+                    terms.style.display = 'flex';
+                    termsCheck.setAttribute('required', 'true');
+                }
+
                 if(btnLogin) btnLogin.textContent = "CRIAR CONTA GRÁTIS";
                 footerSpan.textContent = "Entrar";
             }
@@ -212,6 +323,7 @@ function setupLoginInteraction() {
         }
 
         if(isLoginMode) {
+            // LOGIN
             const { data, error } = await supabase
                 .from('players')
                 .select('id')
@@ -219,7 +331,7 @@ function setupLoginInteraction() {
                 .single();
 
             if(error || !data) {
-                showToast('Usuário não encontrado.', 'error');
+                showToast('E-mail não encontrado.', 'error');
                 if(btnLogin) {
                     btnLogin.disabled = false;
                     btnLogin.textContent = "ENTRAR";
@@ -231,16 +343,18 @@ function setupLoginInteraction() {
             location.reload(); 
             
         } else {
-            const name = document.getElementById('regName').value;
-            const cpf = document.getElementById('regCpf').value;
-            const phone = document.getElementById('regPhone').value;
+            // REGISTRO
+            const name = nameInput.value;
+            const cpf = cpfInput.value;
+            const phone = phoneInput.value;
 
             if(name.length < 3 || cpf.length < 14) {
-                showToast('Preencha todos os dados corretamente.', 'error');
+                showToast('Preencha os dados corretamente.', 'error');
                 if(btnLogin) btnLogin.disabled = false;
                 return;
             }
 
+            // 1. Tentar criar
             const { data, error } = await supabase
                 .from('players')
                 .insert([{ username: name, email, cpf, phone }])
@@ -249,11 +363,18 @@ function setupLoginInteraction() {
 
             if (error) {
                 console.error(error);
-                if(error.code === '23505') showToast('E-mail ou CPF já cadastrados.', 'error');
-                else showToast('Erro ao criar conta.', 'error');
+                if(error.code === '23505') {
+                    // DUPLICADO
+                    showToast('E-mail ou CPF já cadastrados. Tente logar.', 'error');
+                } else {
+                    showToast('Erro ao criar conta.', 'error');
+                }
                 if(btnLogin) btnLogin.disabled = false;
             } else {
+                // Sucesso
                 localStorage.setItem('gowin_player_id', data.id);
+                // Reseta tasks locais para o novo user
+                resetTasksLocal();
                 showToast('Conta criada com sucesso!', 'success');
                 setTimeout(() => location.reload(), 1500);
             }
@@ -312,35 +433,7 @@ function setupGameInteraction() {
     if(closeBtn) closeBtn.addEventListener('click', closeGameLauncher);
 }
 
-function setupTaskInteraction() {
-    const list = document.getElementById('taskList');
-    if(list) {
-        list.addEventListener('click', async (e) => {
-            if(e.target.classList.contains('task-btn') && !e.target.classList.contains('claimable') === false) {
-                if(e.target.disabled) return;
-
-                const index = e.target.dataset.index;
-                const task = tasks[index];
-
-                const { data: newBalance, error } = await supabase
-                    .rpc('add_balance', { p_id: userProfile.id, amount: task.reward });
-
-                if (!error) {
-                    userProfile.balance = newBalance;
-                    task.status = "Resgatado";
-                    saveTasksData(); 
-                    animateBalanceUI(newBalance);
-                    showToast(`Bônus de R$ ${task.reward.toFixed(2)} resgatado!`, 'success');
-                    renderTasks('taskList');
-                } else {
-                    showToast('Erro ao resgatar bônus.', 'error');
-                }
-            }
-        });
-    }
-}
-
-// --- DEPÓSITO COM SANITIZAÇÃO RIGOROSA ---
+// --- DEPÓSITO ---
 function setupDepositInteraction() {
     const manualInput = document.getElementById('manualDepositInput');
     const actionBtn = document.getElementById('btnDepositAction');
@@ -407,14 +500,15 @@ function setupDepositInteraction() {
                 return;
             }
 
-            // 2. Data Sanitization (CRITICAL FIX)
             const cleanCpf = userData.cpf ? userData.cpf.replace(/\D/g, '') : "00000000000";
             const cleanPhone = userData.phone ? userData.phone.replace(/\D/g, '') : "00000000000";
             
+            // CORREÇÃO CRÍTICA DO PAYLOAD PIX
             const payload = {
                 "amount": amountCents, 
                 "offer_hash": OFFER_HASH_DEFAULT, 
-                "payment_method": "pix", 
+                "payment_method": "pix",
+                "installments": 1, // ADICIONADO AQUI NA RAIZ
                 "customer": {
                     name: userData.name || "Cliente GOW",
                     email: userData.email || "email@temp.com",
@@ -455,7 +549,7 @@ function setupDepositInteraction() {
                     monitorPayment(apiData.hash, amount, txn.id);
                 } else {
                     console.error("Invictus Error:", apiData);
-                    const msg = apiData.errors ? Object.values(apiData.errors).flat().join(' ') : 'Verifique seus dados.';
+                    const msg = apiData.errors ? Object.values(apiData.errors).flat().join(' ') : (apiData.message || 'Verifique seus dados.');
                     showToast(`Erro no PIX: ${msg}`, 'error');
                 }
 
@@ -551,7 +645,6 @@ function setupNavigation() {
     if(refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
             refreshBtn.classList.add('fa-spin');
-            
             try {
                 const { data } = await supabase
                     .from('wallets')
@@ -565,7 +658,6 @@ function setupNavigation() {
                     showToast('Saldo atualizado.', 'info');
                 }
             } catch(e) {}
-            
             setTimeout(() => refreshBtn.classList.remove('fa-spin'), 1000);
         });
     }
@@ -585,7 +677,6 @@ function setupWithdrawalLogic() {
     const btnWithdraw = document.getElementById('btnRequestWithdraw');
     if(btnWithdraw) {
         btnWithdraw.addEventListener('click', () => {
-            // Em produção: Validar saldo e criar transação de saque 'pending'
             if(userProfile.balance > 0) {
                  showToast('Solicitação enviada para análise.', 'info');
             } else {

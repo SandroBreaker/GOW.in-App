@@ -11,16 +11,20 @@ export let userProfile = {
 };
 
 export const defaultTasks = [
-    { title: "Bônus de Boas Vindas", reward: 5.00, status: "Receber" },
-    { title: "Verificar E-mail", reward: 2.00, status: "Receber" },
-    { title: "Primeiro Depósito", reward: 10.00, status: "Receber" }
+    { id: 1, title: "Bônus de Boas Vindas", reward: 5.00, status: "Receber", type: 'welcome' },
+    { id: 2, title: "Verificar E-mail", reward: 2.00, status: "Receber", type: 'verify_email' },
+    { id: 3, title: "Primeiro Depósito", reward: 10.00, status: "Bloqueado", type: 'check_deposit' }
 ];
 
-export let tasks = JSON.parse(localStorage.getItem('gowin_tasks')) || defaultTasks;
+// Carrega tasks padrão. O status real será atualizado pelo main.js via Supabase
+export let tasks = JSON.parse(JSON.stringify(defaultTasks));
 
-// Funções de Persistência Local (apenas para cache rápido ou tasks simples)
 export function saveTasksData() {
-    localStorage.setItem('gowin_tasks', JSON.stringify(tasks));
+    // Mantido apenas para compatibilidade, a persistência real é no Supabase
+}
+
+export function resetTasksLocal() {
+    tasks = JSON.parse(JSON.stringify(defaultTasks));
 }
 
 // Lista de Jogos (Estática)
