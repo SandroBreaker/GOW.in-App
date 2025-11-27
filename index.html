@@ -3,28 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#2e0249">
+    <meta name="theme-color" content="#0f0a1e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>GOW.in - App</title>
+    <title>GOW.in - Plataforma</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <!-- SUPABASE CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
 </head>
 <body>
 
+    <!-- TOAST NOTIFICATIONS -->
     <div id="toast-container"></div>
-<!-- ... RESTO DO CÓDIGO PERMANECE IGUAL ATÉ O FIM ... -->
+
+    <!-- TELA DE LOGIN / REGISTRO (Inicialmente Visível ou Controlada via JS) -->
+    <section id="login-view" class="login-overlay" style="display: none;">
+        <div class="login-content">
+            <div class="login-logo">GOW<span>.in</span></div>
+            <div class="login-subtitle">Jogue. Conquiste. Lucre.</div>
+            
+            <form class="login-form" id="registerForm">
+                <div class="input-group-login">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="regName" placeholder="Nome de Usuário" required>
+                </div>
+                <div class="input-group-login">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="regEmail" placeholder="Seu melhor e-mail" required>
+                </div>
+                <div class="input-group-login">
+                    <i class="fas fa-id-card"></i>
+                    <input type="tel" id="regCpf" placeholder="CPF (apenas números)" maxlength="14" required>
+                </div>
+                <div class="input-group-login">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" id="regPhone" placeholder="WhatsApp" maxlength="15" required>
+                </div>
+
+                <div class="terms">
+                    <input type="checkbox" id="termsCheck" required>
+                    <label for="termsCheck">Concordo que sou maior de 18 anos e aceito os termos de serviço.</label>
+                </div>
+
+                <button type="submit" class="btn-login">CRIAR CONTA GRÁTIS</button>
+            </form>
+
+            <div class="login-footer">
+                Já tem conta? <span>Entrar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- GAME LAUNCHER MODAL (IFRAME) -->
+    <div id="game-modal" class="modal-overlay">
+        <div class="modal-content game-modal-size">
+            <div class="modal-header">
+                <span id="modal-game-title" style="color:#fff; font-weight:bold;">Jogo</span>
+                <button class="close-modal-btn" id="btnCloseModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="game-loader">
+                <div class="spinner"></div>
+                <p style="color:#aaa; font-size:12px;">Conectando ao servidor seguro...</p>
+            </div>
+            <div class="game-frame-placeholder"></div>
+        </div>
+    </div>
+
+    <!-- PIX PAYMENT MODAL -->
+    <div id="pixModal" class="modal-overlay" style="align-items: center;">
+        <div class="modal-content" style="border-radius: 20px; max-width: 360px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <span>Pagamento via PIX</span>
+                <button class="close-modal-btn" id="btnClosePixModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="pix-content">
+                <div class="qr-container" style="display: block;">
+                    <img id="qrCodeImage" src="" alt="QR Code">
+                </div>
+                
+                <div style="text-align:center; margin-bottom:15px;">
+                    <div style="font-size:12px; color:#aaa;">Valor a Pagar</div>
+                    <div id="modalAmount" style="font-size:24px; font-weight:bold; color:var(--success);">R$ 0,00</div>
+                </div>
+
+                <div class="pix-copy-area">
+                    <label>Código Copia e Cola</label>
+                    <textarea id="pixCodeTextarea" readonly></textarea>
+                    <button id="copyPixButton" class="cta-btn" style="font-size:12px; padding:10px;"><i class="far fa-copy"></i> Copiar Código</button>
+                </div>
+
+                <div class="payment-status-box">
+                    <div class="loader-dots"></div>
+                    <span style="font-size:11px;">Aguardando pagamento... (Liberação automática)</span>
+                </div>
+                <div id="modalHash" style="font-size:9px; color:#555; margin-top:10px; text-align:center;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header id="mainHeader" style="display:none;">
+        <div class="logo">GOW<span>.in</span></div>
+        <div class="header-right">
+            <div class="balance-badge">
+                <span id="user-balance">0,00</span> 
+                <i class="fas fa-sync-alt refresh-icon" id="btnRefreshBalance" style="font-size:10px; margin-left:8px; cursor:pointer;"></i>
+            </div>
+            <button class="btn-header btn-deposito" data-nav="deposito">DEPOSITAR</button>
+        </div>
+    </header>
+
+    <!-- APP CONTENT -->
+    <main id="app-container" style="display:none;">
+        
+        <!-- HOME / LOBBY -->
+        <div id="home" class="page active">
+            
+            <div class="hero-banner">
+                <div class="hero-text">
+                    <h3>Bônus de Boas-vindas</h3>
+                    <p>Deposite R$ 20 e ganhe +50% no primeiro depósito!</p>
+                </div>
+            </div>
+
+            <div class="category-nav">
+                <div class="cat-item active" data-cat="all"><i class="fas fa-th-large"></i> <span>Tudo</span></div>
+                <div class="cat-item" data-cat="exclusive"><i class="fas fa-star"></i> <span>Exclusivos</span></div>
+                <div class="cat-item" data-cat="crash"><i class="fas fa-chart-line"></i> <span>Crash</span></div>
+                <div class="cat-item" data-cat="slots"><i class="fas fa-gem"></i> <span>Slots</span></div>
+            </div>
+
+            <div class="section-header">
+                <div class="section-title" id="homeSectionTitle"><i class="fas fa-fire"></i> Em Alta</div>
+            </div>
+            
+            <div class="game-grid" id="gameGrid"></div>
+        </div>
+
+        <!-- QUESTS / OFERTAS -->
+        <div id="ofertas" class="page">
+             <div class="header-page-title" style="text-align:center; font-weight:bold; margin-bottom:20px;">Missões Diárias</div>
+             <div class="task-list" id="taskList"></div>
+        </div>
+
+        <!-- PERFIL -->
+        <div id="perfil" class="page">
+            <div class="profile-header-new">
+                <div class="profile-user-row">
+                    <div class="profile-avatar-lg">
+                        <img src="https://ui-avatars.com/api/?name=User&background=random&color=fff" alt="User" id="profile-img">
+                    </div>
+                    <div class="profile-texts">
+                        <h3 id="profile-name">Carregando...</h3>
+                        <div style="display:flex; gap:5px;">
+                            <span class="profile-id">ID: <span id="profile-id-display">...</span></span>
+                            <span class="vip-badge">VIP 1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="wallet-card">
+                    <div class="wallet-label">Saldo Disponível</div>
+                    <div class="wallet-balance">
+                        R$ <span id="profile-balance-display">0,00</span>
+                    </div>
+                    <div class="wallet-actions">
+                        <button class="action-btn" data-nav="saque"><i class="fas fa-arrow-up"></i> Saque</button>
+                        <button class="action-btn btn-deposito-profile" data-nav="deposito"><i class="fas fa-plus"></i> Depositar</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-menu">
+                <div class="menu-item" data-nav="ofertas"><i class="fas fa-gift"></i> Meus Bônus</div>
+                <div class="menu-item"><i class="fas fa-history"></i> Histórico de Jogos</div>
+                <div class="menu-item"><i class="fas fa-receipt"></i> Transações</div>
+                <div class="menu-item" data-nav="suporte"><i class="fas fa-headset"></i> Suporte</div>
+            </div>
+
+             <button class="logout-btn-small" id="btnLogout">Sair da conta</button>
+        </div>
+
+        <!-- DEPÓSITO -->
+        <div id="deposito" class="page">
+            <div class="section-header">
+                <div class="section-title">Adicionar Saldo</div>
+            </div>
+
+            <div class="user-info-confirm">
+                <div class="info-row-confirm">
+                    <i class="fas fa-user-check"></i> 
+                    <span id="confirmName">...</span>
+                </div>
+                <div class="info-row-confirm">
+                    <i class="fas fa-id-card"></i> 
+                    <span id="confirmCpf">...</span>
+                    <span class="edit-link" style="margin-left:auto;">(Confirmado)</span>
+                </div>
+            </div>
+
+            <div class="manual-deposit-box">
+                <label>Valor do Depósito (BRL)</label>
+                <div class="input-group">
+                    <span class="currency-prefix">R$</span>
+                    <input type="number" id="manualDepositInput" placeholder="0,00" min="15">
+                </div>
+            </div>
+            
+            <div class="deposit-grid" id="depositAmounts"></div>
+            
+            <button class="cta-btn" id="btnDepositAction" disabled style="opacity:0.5;">Selecione um valor</button>
+            
+            <div style="text-align:center; margin-top:15px; font-size:11px; color:#555;">
+                <i class="fas fa-lock"></i> Pagamento processado via Invictus Pay
+            </div>
+        </div>
+
+        <!-- SAQUE -->
+        <div id="saque" class="page">
+             <div class="header-page-title" style="text-align:center; margin-bottom:20px;">Retirada PIX</div>
+             <div style="background:var(--bg-card); padding:20px; border-radius:12px; text-align:center;">
+                 <i class="fas fa-wallet" style="font-size:40px; color:var(--accent); margin-bottom:15px;"></i>
+                 <p style="color:#ddd; margin-bottom:10px;">Saldo Disponível para Saque</p>
+                 <h2 style="color:#fff; margin-bottom:20px;">R$ <span id="withdraw-available">0,00</span></h2>
+                 
+                 <div class="manual-deposit-box" style="text-align:left;">
+                    <label>Chave PIX (CPF/Email/Tel)</label>
+                    <input type="text" class="dark-input" placeholder="Sua chave aqui...">
+                 </div>
+
+                 <button class="cta-btn btn-withdraw-action" id="btnRequestWithdraw" style="background:var(--accent); margin-top:10px;">Solicitar Saque</button>
+             </div>
+        </div>
+
+        <!-- SUPORTE -->
+        <div id="suporte" class="page">
+              <div class="header-page-title" style="text-align:center; margin-bottom:20px;">Precisa de ajuda?</div>
+              <div class="support-card">
+                <div class="support-icon-area"><i class="fab fa-whatsapp"></i></div>
+                <div>
+                    <h4>Suporte via WhatsApp</h4>
+                    <p style="font-size:12px; color:#aaa;">Atendimento 24h para VIPs</p>
+                </div>
+              </div>
+
+              <div class="faq-section">
+                  <h5>Perguntas Frequentes</h5>
+                  <div class="faq-item">Como depositar?</div>
+                  <div class="faq-item">Meu saque não caiu</div>
+                  <div class="faq-item">Regras do Bônus</div>
+              </div>
+        </div>
+
+    </main>
+
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="mainNav" style="display:none;">
          <div class="nav-item active" data-target="home"><i class="fas fa-home"></i><span>Lobby</span></div>
@@ -34,7 +266,7 @@
          <div class="nav-item" data-target="perfil"><i class="fas fa-user-ninja"></i><span>Perfil</span></div>
     </nav>
 
-    <!-- SUPABASE CLIENT -->
+    <!-- SUPABASE CLIENT & MAIN LOGIC -->
     <script type="module" src="js/supabaseClient.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
