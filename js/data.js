@@ -32,7 +32,7 @@ export const gamesList = [
     { 
         id: 106, 
         name: "Aviator Pro", 
-        img: "https://aviator-game.in/wp-content/uploads/2023/01/aviator-game-logo.png", 
+        img: "https://images.firstpost.com/uploads/2024/02/Aviator-Game-Online.jpg?im=FitAndFill=(596,336)", 
         provider: "CRASH", 
         url: "gameList/aviator/index.html" 
     },
@@ -67,18 +67,10 @@ export const gamesList = [
     { 
         id: 104, 
         name: "Elden Ring", 
-        img: "https://images.hdqwalls.com/wallpapers/elden-ring-4k-2022-5k.jpg", 
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRueABQlWOel9l99B0PMJN-AQVwZSyLiCWvBw&s", 
         provider: "EXCLUSIVO", 
         url: "gameList/elden ring/index.html" 
-    },
-    { id: 2, name: "Fortune Tiger", img: "https://placehold.co/100x100/orange/white?text=Tiger", provider: "PG" },
-    { id: 3, name: "Fortune Dragon", img: "https://placehold.co/100x100/red/white?text=Dragon", provider: "PG" },
-    { id: 4, name: "Fortune Snake", img: "https://placehold.co/100x100/green/white?text=Snake", provider: "PG" },
-    { id: 5, name: "Fortune Ox", img: "https://placehold.co/100x100/gold/white?text=Ox", provider: "PG" },
-    { id: 6, name: "Fortune Mouse", img: "https://placehold.co/100x100/blue/white?text=Mouse", provider: "PG" },
-    { id: 7, name: "Gates of Olympus", img: "https://placehold.co/100x100/yellow/white?text=Olympus", provider: "PP" },
-    { id: 8, name: "Sweet Bonanza", img: "https://placehold.co/100x100/pink/white?text=Bonanza", provider: "PP" },
-    { id: 9, name: "Mines", img: "https://placehold.co/100x100/blue/white?text=Mines", provider: "SPRIBE" }
+    }
 ];
 
 export const depositOptions = [
