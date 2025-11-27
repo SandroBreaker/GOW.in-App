@@ -1,0 +1,294 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto:wght@400;700&display=swap');
+
+:root {
+    --bg-dark: #0f0a1e;
+    --bg-panel: #1a1528;
+    --dragon-red: #ff3b3b;
+    --dragon-orange: #ff9f1a;
+    --gold: #ffd700;
+    --safe-green: #00e676;
+    --text: #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+body {
+    background: #000;
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    background-image: linear-gradient(to bottom, #0f0a1e, #000);
+}
+
+.game-container {
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-left: 1px solid #222;
+    border-right: 1px solid #222;
+}
+
+/* HEADER */
+.game-header {
+    padding: 15px;
+    background: rgba(20, 20, 30, 0.9);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--dragon-orange);
+    z-index: 10;
+}
+.logo-area {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: var(--dragon-orange);
+    text-shadow: 0 0 10px rgba(255, 159, 26, 0.5);
+}
+.balance-area {
+    text-align: right;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+/* ÁREA DA CAVERNA (Grid) */
+.cave-grid-wrapper {
+    flex: 1;
+    display: flex;
+    padding: 10px;
+    gap: 5px;
+    overflow-y: auto;
+    /* Faz a lista começar de baixo para cima visualmente */
+    align-items: flex-end; 
+    justify-content: center;
+    background: radial-gradient(circle at center, #2a2038 0%, #000 100%);
+}
+
+.multiplier-sidebar {
+    display: flex;
+    flex-direction: column-reverse; /* Nível 1 embaixo */
+    justify-content: space-around;
+    padding-bottom: 10px;
+    gap: 8px;
+    width: 50px;
+}
+.mult-tag {
+    font-size: 0.75rem;
+    color: #777;
+    text-align: center;
+    padding: 4px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    transition: 0.3s;
+}
+.mult-tag.active {
+    color: var(--gold);
+    background: rgba(255, 215, 0, 0.2);
+    font-weight: bold;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255,215,0,0.3);
+}
+
+.cave-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column-reverse; /* Nível 1 embaixo */
+    gap: 8px;
+    padding-bottom: 10px;
+    max-width: 320px;
+}
+
+.cave-row {
+    display: flex;
+    gap: 10px;
+    opacity: 0.3; /* Desativado por padrão */
+    transition: 0.3s;
+    pointer-events: none;
+}
+
+.cave-row.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1.02);
+}
+
+.cave-row.passed {
+    opacity: 0.5;
+}
+
+.egg-box {
+    flex: 1;
+    aspect-ratio: 1/1;
+    background: #251b33;
+    border: 2px solid #3d2c52;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    box-shadow: 0 4px 0 #150f20;
+}
+.egg-box:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #150f20;
+}
+
+/* CONTEÚDO DO OVO */
+.egg-content {
+    width: 60%;
+    height: 60%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Estilos de Estado do Ovo */
+.egg-default {
+    background-image: url('https://cdn-icons-png.flaticon.com/128/2530/2530666.png'); /* Ovo Misterioso */
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));
+}
+
+.egg-diamond {
+    background-image: url('https://cdn-icons-png.flaticon.com/128/679/679660.png'); /* Diamante */
+    filter: drop-shadow(0 0 10px var(--gold));
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.egg-dragon {
+    background-image: url('https://cdn-icons-png.flaticon.com/128/1236/1236243.png'); /* Dragão */
+    filter: drop-shadow(0 0 10px var(--dragon-red));
+    animation: shake 0.4s ease-in-out;
+}
+
+.egg-box.revealed {
+    background: #332447;
+    border-color: #554075;
+    pointer-events: none;
+}
+
+.egg-box.bad {
+    background: #4a1515;
+    border-color: var(--dragon-red);
+}
+
+.egg-box.good {
+    background: #1a4a2e;
+    border-color: var(--safe-green);
+}
+
+/* CONTROLES */
+.game-controls {
+    background: #151020;
+    padding: 15px;
+    border-top: 1px solid #333;
+    z-index: 10;
+}
+
+.status-message {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: var(--dragon-orange);
+    height: 20px;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
+}
+
+.bet-adjust {
+    display: flex;
+    flex: 1;
+    background: #000;
+    border-radius: 8px;
+    border: 1px solid #333;
+    padding: 2px;
+}
+.bet-adjust button {
+    width: 40px;
+    background: #333;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    border-radius: 6px;
+}
+.bet-adjust input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.action-btn {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #fff;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.2s;
+}
+
+.play {
+    background: linear-gradient(180deg, var(--dragon-orange), #d35400);
+    box-shadow: 0 4px 0 #a04000;
+}
+.play:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #a04000;
+}
+
+.cashout {
+    background: linear-gradient(180deg, #00e676, #00a854);
+    box-shadow: 0 4px 0 #007a3d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+    padding: 5px;
+}
+.cashout span:last-child {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+.cashout:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #007a3d;
+}
+
+/* ANIMAÇÕES */
+@keyframes popIn {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes flashRed {
+    0% { background: rgba(255,0,0,0.5); }
+    100% { background: transparent; }
+}
+
+.shake-screen {
+    animation: shake 0.5s ease-in-out;
+}

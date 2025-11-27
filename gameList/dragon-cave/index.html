@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dragon's Cave</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <main class="game-container">
+        <!-- HEADER -->
+        <header class="game-header">
+            <div class="logo-area">
+                <i class="fas fa-dragon"></i> Dragon's Cave
+            </div>
+            <div class="balance-area">
+                <span style="font-size:10px; color:#aaa; display:block;">Saldo</span>
+                <span id="balanceDisplay">R$ 50,00</span>
+            </div>
+        </header>
+
+        <!-- ÁREA DO JOGO (Torre) -->
+        <section class="cave-grid-wrapper">
+            <div class="multiplier-sidebar" id="multSidebar">
+                <!-- Preenchido via JS -->
+            </div>
+            
+            <div class="cave-grid" id="caveGrid">
+                <!-- Linhas e Ovos gerados via JS -->
+            </div>
+        </section>
+
+        <!-- CONTROLES -->
+        <footer class="game-controls">
+            <div class="status-message" id="statusMsg">Faça sua aposta para entrar...</div>
+            
+            <div class="input-row" id="bettingControls">
+                <div class="bet-adjust">
+                    <button id="btnDec">-</button>
+                    <input type="number" id="betInput" value="2.00" readonly>
+                    <button id="btnInc">+</button>
+                </div>
+                <button id="btnPlay" class="action-btn play">JOGAR</button>
+            </div>
+
+            <button id="btnCashout" class="action-btn cashout" style="display:none;">
+                <span>RETIRAR</span>
+                <span id="cashoutValue">R$ 0,00</span>
+            </button>
+        </footer>
+    </main>
+
+    <!-- ÁUDIO (Simulação) -->
+    <!-- Na prática, adicione arquivos reais na pasta assets -->
+    <script src="app.js"></script>
+</body>
+</html>

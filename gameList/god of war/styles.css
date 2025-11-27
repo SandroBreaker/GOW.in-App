@@ -1,0 +1,315 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;600&display=swap');
+
+:root{  
+  /* Paleta God of War */
+  --bg: #0b0f19;           
+  --panel: #1c2526;        
+  --gold: #c0a062;         
+  --kratos: #b33939;       
+  --ice: #74b9ff;          
+  --accent: #d35400;       
+  --muted: #b2bec3;        
+  --card: #15191c;         
+  --glass: rgba(255,255,255,0.05);  
+  --transition: 0.4s cubic-bezier(.25,.8,.25,1);  
+  
+  /* Variável de Arredondamento Global */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 35px;
+  --radius-btn: 50px;
+}  
+
+/* Reset básico */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:'Inter', sans-serif;-webkit-font-smoothing:antialiased}
+
+body {
+  background:
+    linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)),
+    url('https://wallpaper.forfun.com/fetch/86/864ef939e9e13034fe2dcfb2125e59bc.jpeg?h=1200&r=0.5') no-repeat center center / cover;
+  color: var(--muted);
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .logo, .spin-btn, .mult, .win-popup {
+  font-family: 'Cinzel', serif;
+}
+
+/* Container */
+.container{
+  max-width:100%;
+  margin:0 auto;
+  padding:3vw 4vw 8vh;
+  min-height:90vh;
+  display:flex;
+  flex-direction:column;
+  backdrop-filter: blur(6px); /* Aumentei o blur para suavizar o fundo */
+}
+
+/* Header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:2.5vh;
+  border-bottom: 1px solid rgba(192, 160, 98, 0.2);
+  padding-bottom: 15px;
+}
+.logo{
+  font-weight:900;
+  color: var(--muted);
+  font-size:5vw;
+  letter-spacing:2px;
+  text-transform: uppercase;
+  text-shadow:0 2px 15px rgba(179, 57, 57, 0.4);
+}
+.logo span { color: var(--kratos); }
+
+.subtitle{
+  font-size:3vw;
+  color:var(--gold);
+  opacity:0.8;
+  font-style: italic;
+  font-family: 'Cinzel', serif;
+}
+.status{
+  font-size:3vw;
+  text-align:right;
+}
+.status span{
+  display:inline-block;
+  margin-left:6px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Balance Scale (Barra arredondada) */
+.balance-scale-wrapper{
+  position: relative;
+  height: 14px; /* Levemente mais alta */
+  border-radius: var(--radius-btn); /* Totalmente redonda */
+  background: #2d3436;
+  overflow: hidden;
+  margin:1vw 0;
+  border: 1px solid #444;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+.balance-scale, .balance-scale-red{
+  position: absolute;
+  top:0; height:100%;
+  transition: width 0.35s ease-out;
+  border-radius: var(--radius-btn); /* Manter o preenchimento redondo */
+}
+.balance-scale{ left:0; width:50%; background: var(--gold); box-shadow: 0 0 10px var(--gold);}
+.balance-scale-red{ right:0; width:50%; background: var(--kratos); }
+.balance-scale-text{
+  position:absolute; width:100%; text-align:center;
+  color:#fff; font-size:0.6rem; font-weight:bold;
+  top:50%; transform:translateY(-50%); text-transform: uppercase;
+  text-shadow: 1px 1px 2px black;
+  z-index: 2;
+}
+
+/* Content */
+.content{
+  flex:1; display:flex; flex-direction:column; gap:2vh;
+}
+
+/* Payout cards (Runas Suavizadas) */
+.payouts{
+  display:flex; gap:2vw; flex-wrap:wrap; justify-content:center;
+}
+.payout-card{
+  background: linear-gradient(145deg, var(--card), #080a0c);
+  border: 1px solid rgba(192, 160, 98, 0.15);
+  border-radius: var(--radius-md); /* Borda muito mais suave (20px) */
+  padding:12px 10px;
+  width:25%; min-width:100px;
+  display:flex; flex-direction:column; align-items:center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease;
+}
+.payout-card:hover{
+  transform: translateY(-5px);
+  border-color: var(--kratos);
+  box-shadow: 0 12px 25px rgba(179, 57, 57, 0.2);
+}
+.payout-card img{
+  width: 8vw;
+  max-width: 40px;
+  height: auto;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+.payout-card .mult{font-weight:900; color:var(--gold); font-size: 0.8rem;}
+.payout-card .value{font-size:2vw; color:var(--muted); opacity: 0.7;}
+
+/* Slot machine (Templo Arredondado) */
+.slot-wrapper{display:flex;justify-content:center;}
+.machine{
+  width:100%; max-width:820px;
+  padding:20px; /* Mais respiro */
+  background: #111;
+  border: 2px solid #333;
+  border-radius: var(--radius-lg); /* Cantos do container principal (35px) */
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+  position: relative;
+  overflow: hidden; /* Garante que nada saia das bordas redondas */
+}
+
+/* Detalhe decorativo sutil nas bordas */
+.machine::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+.reels{display:flex; gap:1.5vw; position:relative;}
+.reel{
+  flex:1;
+  background: linear-gradient(180deg, #0f1214, #181c1f);
+  border: 1px solid #333;
+  border-radius: var(--radius-md); /* Cilindros arredondados (20px) */
+  height:30vw; max-height:280px;
+  overflow:hidden;
+  position: relative;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8); /* Profundidade */
+}
+
+.cell{
+  width:100%; height:33.333%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.symbol-img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.6));
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cell.win .symbol-img{
+  animation: godPulse 0.8s infinite alternate;
+  filter: drop-shadow(0 0 15px var(--gold));
+  transform: scale(1.2);
+}
+
+/* Controles Arredondados */
+.info-row{display:flex; gap:3vw; align-items:center; justify-content:space-between; margin-top:1.5vh; flex-wrap:wrap; width: 100%;}
+.controls-card{display:flex; gap:3vw; align-items:center;}
+
+.bet-controls{
+  display:flex; align-items:center; gap:1vw;
+  background: #000;
+  border: 1px solid #333;
+  padding: 8px 12px;
+  border-radius: var(--radius-btn); /* Formato de pílula completo */
+}
+
+.tiny{
+  background: var(--panel); color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 50%; /* Botões + e - totalmente redondos */
+  width: 35px; height: 35px;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-weight: bold;
+  font-size: 1.2rem;
+  transition: 0.2s;
+}
+.tiny:hover { background: var(--gold); color: #000; transform: scale(1.1); }
+.tiny:active { transform: scale(0.9); }
+
+.bet-value{
+  color: #fff; font-family: 'Cinzel', serif; font-weight: 700;
+  font-size: 3.5vw; min-width: 12vw;
+}
+
+/* Select Box */
+.volatility select{
+  background: #000; color: var(--gold);
+  border: 1px solid #444; 
+  padding: 10px 20px;
+  border-radius: var(--radius-btn); /* Select arredondado */
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+}
+.volatility select:hover { border-color: var(--gold); }
+
+/* Meta Card */
+.meta-card {
+    border-radius: var(--radius-md);
+    padding: 15px;
+}
+
+/* Botão Spin (Rage) - Círculo ou Pílula Grande */
+.spin-btn{
+  padding:3vw 8vw;
+  border-radius: var(--radius-btn); /* Totalmente arredondado (50px) */
+  border: 2px solid var(--kratos); /* Borda mais grossa */
+  background: linear-gradient(180deg, #8e2a2a, #521010);
+  color: #fff;
+  font-weight:900; font-size:5vw; letter-spacing: 2px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px rgba(179, 57, 57, 0.3);
+  cursor:pointer; position: relative; overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.spin-btn::before {
+  content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(rgba(255,255,255,0.2), transparent);
+  border-radius: var(--radius-btn);
+}
+.spin-btn:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(179, 57, 57, 0.5); }
+.spin-btn:active{ transform:translateY(4px) scale(0.98); }
+.spin-btn:disabled{ filter: grayscale(1); opacity: 0.5; transform: none; }
+
+/* Win Popup Suavizado */
+.win-popup{
+  position:fixed; top:40%; left:50%;
+  transform:translate(-50%,-50%);
+  background: rgba(11, 15, 25, 0.98);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius-lg); /* Cantos suavizados */
+  padding: 40px;
+  color: var(--gold);
+  text-align:center;
+  box-shadow: 0 0 60px rgba(192, 160, 98, 0.4);
+  z-index:9999; pointer-events:none;
+  font-size: 6vw; text-transform: uppercase; letter-spacing: 3px;
+}
+
+/* Inputs */
+#betDisplay {
+  border-bottom: 1px solid var(--gold);
+  font-family: 'Cinzel', serif;
+  background: transparent;
+  color: #fff;
+  border-radius: 0; /* Input underline mantém reto embaixo */
+}
+
+/* Utilitários */
+.hl-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 10; border-radius: var(--radius-md); }
+.confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+#betError { color: var(--kratos); font-size: 0.8rem; display: none; }
+
+/* Animações */
+@keyframes godPulse{
+  0%{transform: scale(1);}
+  100%{transform: scale(1.25);}
+}
+
+/* Responsivo */
+@media(max-width:600px){
+  .logo{font-size: 8vw;}
+  .spin-btn{font-size: 6vw; width: 100%; padding: 4vw 8vw;}
+  .payout-card{ border-radius: 15px; }
+  .reel { border-radius: 12px; }
+}

@@ -1,0 +1,381 @@
+
+:root{  
+  --bg:#001F3F;  
+  --panel:#06304A;  
+  --gold:#FFD700;  
+  --luffy:#D72638;  
+  --accent:#FFA500;  
+  --muted:#cfe7ff;  
+  --card:#072336;  
+  --glass: rgba(255,255,255,0.03);  
+  --transition: 0.4s cubic-bezier(.25,.8,.25,1);  
+}  
+
+/* Reset básico */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;-webkit-font-smoothing:antialiased}
+
+/* Body com fundo */
+body {
+  background:
+    linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+    url('assets/fundo.jpg') no-repeat center center / cover;
+  color: var(--muted);
+}
+
+body {
+  width: 100vw;
+}
+
+/* Container principal */
+.container{
+  max-width:100%;
+  margin:0 auto;
+  padding:3vw 4vw 8vh;
+  min-height:90vh;
+  display:flex;
+  flex-direction:column;
+  backdrop-filter: blur(2px);
+}
+
+/* Header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:2.5vh;
+}
+.logo{
+  font-weight:900;
+  color:var(--gold);
+  font-size:5vw;
+  letter-spacing:1px;
+  text-shadow:0 2px 12px rgba(0,0,0,0.7);
+}
+.subtitle{
+  font-size:3vw;
+  color:var(--muted);
+  opacity:0.85;
+}
+.status{
+  font-size:3vw;
+  text-align:right;
+  transition:var(--transition);
+}
+.status span{
+  display:inline-block;
+  margin-left:6px;
+  color:#fff;
+  transition:transform 0.3s ease;
+}
+
+/* Balance Scale */
+.balance-scale-wrapper{
+  position: relative;
+  height: 20px;
+  border-radius: 10px;
+  background: #444;
+  overflow: hidden;
+  margin:1vw 0;
+}
+.balance-scale,
+.balance-scale-red{
+  position: absolute;
+  top:0;
+  height:100%;
+  transition: width 0.35s ease-out, background 0.3s ease;
+}
+.balance-scale{ left:0; width:50%; background:#4CAF50;}
+.balance-scale-red{ right:0; width:50%; background:#F44336;}
+.balance-scale-text{
+  position:absolute;
+  width:100%;
+  text-align:center;
+  color:#fff;
+  font-size:0.5rem;
+  font-weight:bold;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+
+/* Content principal */
+.content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:2vh;
+}
+
+/* Payout cards */
+.payouts{
+  display:flex;
+  gap:2vw;
+  flex-wrap:wrap;
+  justify-content:justify-content;
+}
+.payout-card{
+  background:linear-gradient(180deg,var(--panel),var(--card));
+  border-radius:8px;
+  padding:8px 10px;
+  width:25%;
+  min-width:100px;
+  display:flex;
+  flex-direction:column;
+  align-items:justify-content;
+  gap:3px;
+  border:1px solid rgba(255,215,0,0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+  font-size:0.85rem;
+  min-height:40px;
+}
+.payout-card:hover{
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:0 10px 20px rgba(255,215,0,0.35);
+}
+.payout-card img{
+  width:8vw;
+  max-width: 40px;
+  height: auto;
+  filter: drop-shadow(0 4px 2px rgba(0,0,0,0.3));
+}
+.payout-card .mult{font-weight:900;color:#fff;}
+.payout-card .value{font-size:2vw;color:var(--muted);}
+
+/* Slot machine */
+.slot-wrapper{display:flex;justify-content:center;}
+.machine{
+  width:100%;
+  max-width:820px;
+  border-radius:14px;
+  padding:2vw;
+  background:linear-gradient(180deg,#08283b,#061a2b);
+  box-shadow:0 22px 60px rgba(0,0,0,0.7);
+  border:6px solid rgba(255,255,255,0.02);
+  transition: transform 0.2s ease;
+}
+.machine:active{transform:scale(0.985);}
+.reels{display:flex;gap:1.2vw;position:relative;padding:1vw;}
+.reel{
+  flex:1;
+  min-width:0;
+  background:linear-gradient(180deg,#0b3b52,#062731);
+  border-radius:10px;
+  padding:1vw;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  align-items:center;
+  border-left:4px solid rgba(255,255,255,0.02);
+  border-right:4px solid rgba(255,255,255,0.02);
+  height:30vw;
+  max-height:280px;
+  overflow:hidden;
+  transition: transform 0.3s ease;
+}
+.cell{
+  width:100%;
+  height:33.333%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+/* IMAGENS DO SLOT */
+.symbol-img{
+  width:85%;
+  height:85%;
+  object-fit:contain;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+  transition: transform 0.4s cubic-bezier(.2,.9,.2,1);
+}
+
+.cell.win .symbol-img{
+  transform: scale(1.15) rotate(-5deg);
+  filter:drop-shadow(0 0 15px rgba(255,215,0,0.8)) brightness(1.2);
+  animation: pulse 0.6s infinite alternate;
+}
+
+/* Highlight canvas */
+.hl-canvas, .hl-wrapper{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+/* Info row e controles */
+.info-row{display:flex;gap:3vw;align-items:center;justify-content:space-between;margin-top:1.5vh;flex-wrap:wrap; width: 100%;}
+.controls-card{display:flex;gap:3vw;align-items:center;}
+.bet-controls{
+  display:flex;
+  align-items:center;
+  gap:1vw;
+  background:var(--panel);
+  padding:0.6vw;
+  border-radius:8px;
+  transition: transform 0.2s ease;
+}
+.bet-controls:hover{transform:scale(1.03);}
+.tiny{
+  padding:0.5vw 1vw;
+  border-radius:6px;
+  border:none;
+  background:var(--luffy);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+}
+.tiny:active{transform:scale(0.95);box-shadow:0 4px 12px rgba(0,0,0,0.25);}
+.tiny:disabled{opacity:0.5;cursor:not-allowed;filter:brightness(0.85);}
+
+.bet-value{
+  min-width:10vw;
+  text-align:center;
+  font-weight:800;
+  font-size:3.4vw;
+  transition: transform 0.3s ease;
+}
+
+/* Volatility */
+.volatility select{
+  display: none;
+  padding:1vw;
+  border-radius:6px;
+  border:none;
+  background:#083b4e;
+  color:#fff;
+  cursor:pointer;
+  transition: transform 0.2s ease;
+}
+.volatility select:hover{transform:scale(1.05);}
+
+/* Meta card */
+.meta-card{
+  background:var(--panel);
+  padding:1vw;
+  border-radius:8px;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:0.5vw;
+  transition: transform 0.25s ease;
+}
+.meta-card:hover{transform:scale(1.02);}
+#lastResult{font-weight:700;}
+.small{
+  padding:0.5vw 0.8vw;
+  border-radius:6px;
+  cursor:pointer;
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+.small:active{transform:scale(0.95);box-shadow:0 4px 12px rgba(0,0,0,0.25);}
+
+/* Footer e botão spin */
+.footer{
+  display:flex;
+  justify-content:center;
+  margin-top:2vh;
+  pointer-events:auto;
+}
+.spin-btn{
+  padding:3vw 5vw;
+  border-radius:50px;
+  border:none;
+  background:linear-gradient(90deg,var(--luffy),#b71b25);
+  color:#fff;
+  font-weight:900;
+  font-size:4.2vw;
+  box-shadow:0 18px 50px rgba(215,38,56,0.45);
+  transform:translateY(0);
+  transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.25s ease;
+  cursor:pointer;
+}
+.spin-btn:active{
+  transform:translateY(3px) scale(0.97);
+  box-shadow:0 12px 28px rgba(215,38,56,0.38);
+  filter:brightness(1.15);
+}
+.spin-btn:disabled{opacity:0.5;cursor:not-allowed;filter:brightness(0.85);}
+
+/* Confetti */
+.confetti-canvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+
+/* Pulse animation */
+@keyframes pulse{
+  0%{transform: scale(1) rotate(0deg);}
+  50%{transform: scale(1.15) rotate(-6deg);}
+  100%{transform: scale(1.2) rotate(-8deg);}
+}
+
+/* Win popup */
+.win-popup{
+  position:fixed;
+  top:30%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg,#FFD700,#FFA500);
+  padding:6vw 3vw;
+  border-radius:20px;
+  color:#001F3F;
+  font-weight:900;
+  font-size:8vw;
+  text-align:center;
+  box-shadow:0 12px 28px rgba(255,215,0,0.7);
+  opacity:0;
+  z-index:9999;
+  pointer-events:none;
+  transition:all 0.6s ease;
+}
+
+/* Button area */
+.button-area{
+  display:flex;
+  justify-content:center;
+  margin:1vh 0 3vh;
+}
+
+/* Last result */
+.last-result{
+  color:white;
+  font-size:1rem;
+  text-shadow:1px 1px 2px #000;
+  margin:10px 0 10px;
+}
+
+/* Responsive */
+@media(max-width:600px){
+  .payout-card{width:45%;}
+  .bet-value{min-width:32vw;}
+  .spin-btn{font-size:5vw;padding:2vw 16vw;}
+  .reel{height:42vw;max-height:220px;}
+}
+
+ .hl-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Estilo do input de aposta */
+  #betDisplay {
+    width: 5ch;
+    text-align: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #fff;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  #betError {
+    color: #ff5555;
+    font-size: 0.8rem;
+    display: none;
+    margin-top: 2px;
+  }

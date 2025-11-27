@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Akatsuki: World of Pain</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="container">
+  <header class="header">
+    <div class="brand">
+      <div class="logo">AKAT<span>SUKI</span></div>
+      <div id="lastResult" class="last-result">Mundo de Sonhos: —</div>
+      <div class="subtitle">Shinra Tensei!</div>
+    </div>
+
+    <div class="status">
+      <div>Ryo <span id="balance">R$ 50,00</span></div>
+      <div>Chakra: R$
+        <input id="betDisplay" type="number">
+        <div id="betError">Chakra insuficiente</div>
+      </div>
+      <div><span id="totalBet">R$ 0,00</span></div>
+      <div><span id="totalWin">R$ 0,00</span></div>
+
+      <div class="balance-scale-wrapper">
+        <div id="balanceScaleGreen" class="balance-scale"></div>
+        <div id="balanceScaleRed" class="balance-scale-red"></div>
+        <div id="balanceScaleText" class="balance-scale-text">Dominação: 0%</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="content">
+    <div class="payouts" id="payouts"></div>
+
+    <div class="slot-wrapper">
+      <div class="machine">
+        <div class="reels" id="reels">
+          <!-- Reels preenchidos via JS ou placeholder inicial -->
+          <div class="reel" id="r0">
+            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+          </div>
+          <div class="reel" id="r1">
+            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+          </div>
+          <div class="reel" id="r2">
+            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+          </div>
+          <div class="reel" id="r3">
+            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+          </div>
+           <div class="reel" id="r4">
+            <div class="cell"><img src="assets/symbols/cloud.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/eye.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/scroll.png" alt="sym" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/kunai.png" alt="sym" class="symbol-img"></div>
+          </div>
+
+          <canvas id="hlCanvas" class="hl-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="controls-card">
+        <div class="bet-controls">
+          <button id="decBet" class="tiny">−</button>
+          <div class="bet-value" id="betValue">R$ 2,00</div>
+          <button id="incBet" class="tiny">+</button>
+        </div>
+
+        <div class="volatility">
+          <label>
+            <select id="volatility">
+              <option value="low">Genin</option>
+              <option value="medium" selected>Jounin</option>
+              <option value="high">Kage</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="meta-card">
+        <div class="simulate">
+          <span id="rtp">Tsukuyomi: 0%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-area">
+      <button id="spinBtn" class="spin-btn">INVOCAR</button>
+    </div>
+  </section>
+
+  <canvas id="confetti" class="confetti-canvas"></canvas>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

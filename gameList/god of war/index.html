@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ragnarök Slots</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="container">
+  <header class="header">
+    <div class="brand">
+      <div class="logo">GOD OF <span>SLOTS</span></div>
+      <div id="lastResult" class="last-result" style="font-family: 'Cinzel'">Última Conquista: —</div>
+      <div class="subtitle">O ciclo termina aqui.</div>
+    </div>
+
+    <div class="status">
+      <div>Hacksilver <span id="balance">R$ 20,00</span></div>
+      <div>Oferenda: R$
+        <input id="betDisplay" type="number">
+        <div id="betError">Valor indigno</div>
+      </div>
+      <div><span id="totalBet">R$ 0,00</span></div>
+      <div><span id="totalWin">R$ 0,00</span></div>
+
+      <div class="balance-scale-wrapper">
+        <div id="balanceScaleGreen" class="balance-scale"></div>
+        <div id="balanceScaleRed" class="balance-scale-red"></div>
+        <div id="balanceScaleText" class="balance-scale-text">0% Glória</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="content">
+    <div class="payouts" id="payouts"></div>
+
+    <div class="slot-wrapper" style="position: relative;">
+      <div class="machine">
+        <div class="reels" id="reels">
+          <div class="reel" id="r0">
+            <div class="cell"><img src="assets/symbols/axe.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/blades.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/shield.png" class="symbol-img"></div>
+          </div>
+          <div class="reel" id="r1">
+            <div class="cell"><img src="assets/symbols/axe.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/blades.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/shield.png" class="symbol-img"></div>
+          </div>
+          <div class="reel" id="r2">
+            <div class="cell"><img src="assets/symbols/axe.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/blades.png" class="symbol-img"></div>
+            <div class="cell"><img src="assets/symbols/shield.png" class="symbol-img"></div>
+          </div>
+
+          <canvas id="hlCanvas" class="hl-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="controls-card">
+        <div class="bet-controls">
+          <button id="decBet" class="tiny">−</button>
+          <div class="bet-value" id="betValue">R$ 2,00</div>
+          <button id="incBet" class="tiny">+</button>
+        </div>
+
+        <div class="volatility">
+          <label>
+            <select id="volatility">
+              <option value="low">Mortal</option>
+              <option value="medium" selected>Semideus</option>
+              <option value="high">Deus da Guerra</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="meta-card" style="border: 1px solid #333; background: #000;">
+        <div class="simulate">
+          <span id="rtp" style="color: var(--muted); font-size: 0.9rem;">Destino: 0%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-area">
+      <button id="spinBtn" class="spin-btn">SPARTAN RAGE</button>
+    </div>
+  </section>
+
+  <canvas id="confetti" class="confetti-canvas"></canvas>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
