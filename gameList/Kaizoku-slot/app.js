@@ -1,11 +1,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // ASSETS: assets/onepiece/
   const SYMBOLS = [
-    { id: 'hat', icon: 'fas fa-hat-cowboy', color: '#f1c40f', weight: 75, mult3: 0.2, mult4: 0.5 },
-    { id: 'fruit', icon: 'fas fa-apple-whole', color: '#9b59b6', weight: 40, mult3: 0.5, mult4: 1.5 },
-    { id: 'meat', icon: 'fas fa-drumstick-bite', color: '#e67e22', weight: 30, mult3: 1.5, mult4: 4 },
-    { id: 'skull', icon: 'fas fa-skull-crossbones', color: '#ecf0f1', weight: 5, mult3: 25, mult4: 60 }
+    { id: 'hat',   img: '../../assets/onepiece/hat.png',   weight: 75, mult3: 0.2, mult4: 0.5 },
+    { id: 'fruit', img: '../../assets/onepiece/fruit.png', weight: 40, mult3: 0.5, mult4: 1.5 },
+    { id: 'meat',  img: '../../assets/onepiece/meat.png',  weight: 30, mult3: 1.5, mult4: 4 },
+    { id: 'skull', img: '../../assets/onepiece/skull.png', weight: 5,  mult3: 25,  mult4: 60 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
@@ -64,8 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const mult3 = PAYOUT_BY_ID[s.id].mult3;
       const card = document.createElement('div');
       card.className = 'payout-card';
-      card.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size:24px;"></i>
-        <div class="mult" style="margin-top:4px;">3x = ${mult3}</div><div class="value">${formatMoney(bet * mult3)}</div>`;
+      card.innerHTML = `
+        <img src="${s.img}" alt="${s.id}">
+        <div class="mult" style="margin-top:4px;">3x = ${mult3}</div>
+        <div class="value">${formatMoney(bet * mult3)}</div>`;
       payoutsEl.appendChild(card);
     });
   }
@@ -97,10 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = results[0].length;
     const cols = results.length;
     
-    // Reset Animations
     document.querySelectorAll('.cell').forEach(c => {
         c.style.transform = 'none';
-        c.querySelector('i').style.animation = 'none';
+        const img = c.querySelector('img');
+        if(img) {
+            img.style.animation = 'none';
+            img.style.filter = 'drop-shadow(0 5px 5px rgba(0,0,0,0.5))';
+        }
     });
 
     for (let row = 0; row < rows; row++) {
@@ -113,10 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (count >= 3) {
             win += bet * PAYOUT_BY_ID[symbolID].mult3;
-            // Animate row
              for(let i=0; i<count; i++){
-                const icon = reelCells[i][row].querySelector('i');
-                icon.style.animation = 'pulse 0.5s infinite';
+                const img = reelCells[i][row].querySelector('img');
+                if(img) img.style.animation = 'pulse 0.5s infinite';
                 reelCells[i][row].style.transform = 'scale(1.1)';
             }
         }
@@ -142,14 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     reelsEls.forEach((reelEl, colIdx) => {
       const cells = reelCells[colIdx];
-      // Blur effect
       cells.forEach(c => c.style.filter = 'blur(4px)');
       
       setTimeout(() => {
           cells.forEach((cell, i) => { 
               cell.style.filter = 'none';
               const s = SYMBOLS_MAP[results[colIdx][i]];
-              cell.innerHTML = `<i class="${s.icon}" style="color:${s.color}; font-size: 40px; text-shadow: 2px 2px 0 #000;"></i>`;
+              cell.innerHTML = `<img src="${s.img}" class="symbol-img" alt="${s.id}">`;
           });
           
           if (colIdx === reelsEls.length - 1) {

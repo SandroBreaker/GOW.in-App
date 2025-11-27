@@ -1,13 +1,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- ASSETS LOCAIS (Pasta Raiz /assets/) ---
+  // --- ASSETS LOCAIS ORGANIZADOS ---
   const SYMBOLS = [
-    { id: 'kunai',  img: '../../assets/kunai.png',  weight: 80, mult3: 0.1, mult4: 0.3, mult5: 1.5 },
-    { id: 'scroll', img: '../../assets/scroll.png', weight: 50, mult3: 0.3, mult4: 1.0, mult5: 4 },
-    { id: 'ring',   img: '../../assets/ring.png',   weight: 35, mult3: 0.8, mult4: 2.5, mult5: 8 },
-    { id: 'cloud',  img: '../../assets/cloud.png',  weight: 15, mult3: 3,   mult4: 10,  mult5: 40 },
-    { id: 'eye',    img: '../../assets/eye.png',    weight: 4,  mult3: 15,  mult4: 80,  mult5: 400 }
+    { id: 'kunai',  img: '../../assets/akatsuki/kunai.png',  weight: 80, mult3: 0.1, mult4: 0.3, mult5: 1.5 },
+    { id: 'scroll', img: '../../assets/akatsuki/scroll.png', weight: 50, mult3: 0.3, mult4: 1.0, mult5: 4 },
+    { id: 'ring',   img: '../../assets/akatsuki/ring.png',   weight: 35, mult3: 0.8, mult4: 2.5, mult5: 8 },
+    { id: 'cloud',  img: '../../assets/akatsuki/cloud.png',  weight: 15, mult3: 3,   mult4: 10,  mult5: 40 },
+    { id: 'eye',    img: '../../assets/akatsuki/eye.png',    weight: 4,  mult3: 15,  mult4: 80,  mult5: 400 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = PAYOUT_BY_ID[s.id];
       const card = document.createElement('div');
       card.className = 'payout-card';
-      // Renderiza IMG em vez de Ícone
       card.innerHTML = `
         <img src="${s.img}" alt="${s.id}">
         <div class="mult">5x: ${p.mult5}</div>
@@ -108,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = results[0].length;
     const cols = results.length;
     
-    // Reset visual
     document.querySelectorAll('.cell').forEach(c => {
         c.classList.remove('win', 'blur');
         c.style.transform = 'none';
@@ -129,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let mult = count === 3 ? payout.mult3 : count === 4 ? payout.mult4 : payout.mult5;
             win += bet * mult;
 
-            // Highlight win
             for(let i=0; i<count; i++){
                 reelCells[i][row].classList.add('win');
             }
@@ -147,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderSymbol(cell, symbolId) {
       const sym = SYMBOLS_MAP[symbolId];
-      // Injeta IMG apontando para assets
       cell.innerHTML = `<img src="${sym.img}" class="symbol-img" alt="${symbolId}">`;
       cell.classList.remove('blur');
   }
@@ -156,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
     spinning = true;
     reelsEls.forEach((reelEl, colIdx) => {
       const cells = reelCells[colIdx];
-      // Adiciona blur
       cells.forEach(c => c.classList.add('blur'));
       
       setTimeout(() => {
@@ -189,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let row = 0; row < 4; row++) { results[col][row] = getRandomSymbolID(); }
     }
     
-    // Placeholder borrado
     document.querySelectorAll('.cell').forEach(c => {
         c.innerHTML = '<div class="blur-effect"></div>';
         c.classList.add('blur');
