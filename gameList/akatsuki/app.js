@@ -1,13 +1,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- ÍCONES FONT AWESOME (Naruto Theme) ---
+  // --- ASSETS LOCAIS (Pasta Raiz /assets/) ---
   const SYMBOLS = [
-    { id: 'kunai', icon: 'fas fa-khanda', color: '#ecf0f1', weight: 80, mult3: 0.1, mult4: 0.3, mult5: 1.5 },
-    { id: 'scroll', icon: 'fas fa-scroll', color: '#f1c40f', weight: 50, mult3: 0.3, mult4: 1.0, mult5: 4 },
-    { id: 'ring', icon: 'fas fa-ring', color: '#9b59b6', weight: 35, mult3: 0.8, mult4: 2.5, mult5: 8 },
-    { id: 'cloud', icon: 'fas fa-cloud', color: '#e74c3c', weight: 15, mult3: 3, mult4: 10, mult5: 40 },
-    { id: 'eye', icon: 'fas fa-eye', color: '#c0392b', weight: 4, mult3: 15, mult4: 80, mult5: 400 }
+    { id: 'kunai',  img: '../../assets/kunai.png',  weight: 80, mult3: 0.1, mult4: 0.3, mult5: 1.5 },
+    { id: 'scroll', img: '../../assets/scroll.png', weight: 50, mult3: 0.3, mult4: 1.0, mult5: 4 },
+    { id: 'ring',   img: '../../assets/ring.png',   weight: 35, mult3: 0.8, mult4: 2.5, mult5: 8 },
+    { id: 'cloud',  img: '../../assets/cloud.png',  weight: 15, mult3: 3,   mult4: 10,  mult5: 40 },
+    { id: 'eye',    img: '../../assets/eye.png',    weight: 4,  mult3: 15,  mult4: 80,  mult5: 400 }
   ];
 
   const SYMBOLS_MAP = Object.fromEntries(SYMBOLS.map(s => [s.id, s]));
@@ -49,11 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceScaleText = document.getElementById('balanceScaleText');
 
   if(!spinBtn || reelsEls.length === 0) return;
-  // Mapeia células (agora divs com icons, não imgs)
   const reelCells = reelsEls.map(reel => [...reel.querySelectorAll('.cell')]);
 
   function formatMoney(val){ return `R$ ${Number(val || 0).toFixed(1)}`; }
-
   function getRandomSymbolID(){ return ID_LIST[Math.floor(Math.random()*ID_LIST.length)]; }
 
   function renderPayoutCards(){
@@ -62,8 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = PAYOUT_BY_ID[s.id];
       const card = document.createElement('div');
       card.className = 'payout-card';
+      // Renderiza IMG em vez de Ícone
       card.innerHTML = `
-        <i class="${s.icon}" style="color:${s.color}; font-size:20px; margin-bottom:5px;"></i>
+        <img src="${s.img}" alt="${s.id}">
         <div class="mult">5x: ${p.mult5}</div>
         <div class="value">Max: ${formatMoney(bet * p.mult5)}</div>
       `;
@@ -113,6 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.cell').forEach(c => {
         c.classList.remove('win', 'blur');
         c.style.transform = 'none';
+        const img = c.querySelector('img');
+        if(img) img.style.filter = 'drop-shadow(0 4px 4px rgba(0,0,0,0.5))';
     });
 
     for (let row = 0; row < rows; row++) {
@@ -146,7 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderSymbol(cell, symbolId) {
       const sym = SYMBOLS_MAP[symbolId];
-      cell.innerHTML = `<i class="${sym.icon}" style="color:${sym.color}; font-size: 32px; filter: drop-shadow(0 0 5px ${sym.color});"></i>`;
+      // Injeta IMG apontando para assets
+      cell.innerHTML = `<img src="${sym.img}" class="symbol-img" alt="${symbolId}">`;
+      cell.classList.remove('blur');
   }
 
   function spinReels(results) {
@@ -158,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       setTimeout(() => {
           cells.forEach((cell, i) => { 
-              cell.classList.remove('blur');
               renderSymbol(cell, results[colIdx][i]);
           });
           
@@ -167,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             spinning = false;
             updateDisplay();
           }
-      }, 600 + (colIdx * 200)); // Tempo mais rápido e fluido
+      }, 600 + (colIdx * 200)); 
     });
   }
 
@@ -187,8 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let row = 0; row < 4; row++) { results[col][row] = getRandomSymbolID(); }
     }
     
-    // Renderiza placeholders borrados durante o giro
-    document.querySelectorAll('.cell').forEach(c => c.innerHTML = '<div class="blur-effect"></div>');
+    // Placeholder borrado
+    document.querySelectorAll('.cell').forEach(c => {
+        c.innerHTML = '<div class="blur-effect"></div>';
+        c.classList.add('blur');
+    });
+    
     spinReels(results);
   });
 
