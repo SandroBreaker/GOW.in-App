@@ -67,7 +67,7 @@ export const gamesList = [
     { 
         id: 104, 
         name: "Elden Ring", 
-        img: "https://images.hdqwalls.com/wallpapers/elden-ring-4k-2022-5k.jpg", 
+        img: "assets/eldenring/capa.jpg", 
         provider: "EXCLUSIVO", 
         url: "gameList/elden ring/index.html" 
     },
