@@ -1,3 +1,4 @@
+
 import { gamesList, depositOptions, tasks, userProfile } from './data.js';
 
 function formatCurrency(val) {
@@ -50,20 +51,17 @@ export function openGameLauncher(gameName, gameUrl = null) {
 
     if(modal) {
         title.textContent = gameName;
-        modal.style.display = 'flex';
+        modal.style.display = 'flex'; // Flex p/ centralizar
         
         // Reset
         loader.style.display = 'flex';
         frame.style.display = 'none';
-        frame.innerHTML = ''; // Limpa conteúdo anterior
+        frame.innerHTML = ''; 
 
         if (gameUrl) {
-            // Se tiver URL, cria Iframe
             const iframe = document.createElement('iframe');
             iframe.src = gameUrl;
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.style.border = "none";
+            iframe.setAttribute('scrolling', 'no'); // Tentar travar scroll
             
             iframe.onload = () => {
                 loader.style.display = 'none';
@@ -71,15 +69,13 @@ export function openGameLauncher(gameName, gameUrl = null) {
             };
             
             frame.appendChild(iframe);
-            // Fallback
-            setTimeout(() => { loader.style.display = 'none'; frame.style.display = 'block'; }, 3000);
         } else {
-            // Simulação
+            // Fallback
             setTimeout(() => {
                 loader.style.display = 'none';
                 frame.style.display = 'flex';
-                frame.innerHTML = `<i class="fas fa-play-circle" style="font-size:50px; color:white; margin-bottom:10px;"></i><p>Jogo Carregado (Simulação)</p>`;
-            }, 2000);
+                frame.innerHTML = `<i class="fas fa-exclamation-triangle" style="font-size:40px; color:#aaa; margin-bottom:10px;"></i><p>Jogo indisponível</p>`;
+            }, 1000);
         }
     }
 }
@@ -89,18 +85,31 @@ export function closeGameLauncher() {
     if(modal) {
         modal.style.display = 'none';
         const frame = document.querySelector('.game-frame-placeholder');
-        if(frame) frame.innerHTML = ''; // Mata o iframe pra parar som
+        if(frame) frame.innerHTML = ''; 
     }
 }
 
-export function renderGames(containerId) {
+// Render Games com suporte a filtro
+export function renderGames(containerId, filter = 'all') {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = gamesList.map(game => `
+    
+    let filteredList = gamesList;
+    
+    // Filtro simples baseado em provider/nome para demonstração
+    if (filter === 'slots') {
+        filteredList = gamesList.filter(g => g.name.toLowerCase().includes('slot') || g.name.toLowerCase().includes('fortune') || g.name.toLowerCase().includes('gates'));
+    } else if (filter === 'crash') {
+        filteredList = gamesList.filter(g => g.provider === 'CRASH' || g.name.includes('Mines') || g.name.includes('Dragon'));
+    }
+
+    container.innerHTML = filteredList.map(game => `
         <div class="game-card" data-game="${game.name}">
             <span class="provider-badge">${game.provider}</span>
             <img src="${game.img}" class="game-img" loading="lazy" alt="${game.name}">
-            <div style="padding: 5px; font-size: 11px; text-align: center;">${game.name}</div>
+            <div class="game-info">
+                <div class="game-name">${game.name}</div>
+            </div>
         </div>
     `).join('');
 }
@@ -111,33 +120,54 @@ export function renderDeposit(containerId) {
     container.innerHTML = depositOptions.map((opt, index) => `
         <div class="dep-btn" data-value="${opt.value}">
             <span class="val">R$ ${opt.value}</span>
-            <span class="bonus">+R$ ${opt.bonus}</span>
+            <span class="bonus">+R$ ${opt.bonus} Bônus</span>
         </div>
     `).join('');
 }
 
+// Render Tasks Gamificada
 export function renderTasks(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = tasks.map((task, index) => `
-        <div style="background:var(--bg-light); padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-size:13px; font-weight:bold;">${task.title}</div>
-                <div style="font-size:10px; color:#aaa; margin-top:2px;">Prêmio: R$ ${task.reward.toFixed(2)}</div>
+    
+    container.innerHTML = tasks.map((task, index) => {
+        const isClaimable = task.status === 'Receber';
+        const btnText = isClaimable ? 'RESGATAR' : '<i class="fas fa-check"></i> FEITO';
+        const iconClass = isClaimable ? 'fa-scroll' : 'fa-check-circle';
+        
+        return `
+        <div class="task-card">
+            <div class="task-icon">
+                <i class="fas ${iconClass}"></i>
             </div>
-            <button class="btn-header btn-claim-task" data-index="${index}" style="background:${task.status === 'Receber' ? 'var(--accent)' : '#444'}; opacity:${task.status === 'Receber' ? '1' : '0.6'};">
-                ${task.status}
+            <div class="task-details">
+                <div class="task-title">${task.title}</div>
+                <div class="task-reward">Recompensa: R$ ${task.reward.toFixed(2)}</div>
+            </div>
+            <button class="task-btn ${isClaimable ? 'claimable' : ''}" data-index="${index}" ${!isClaimable ? 'disabled' : ''}>
+                ${btnText}
             </button>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 export function updateUserUI() {
     const balEl = document.getElementById('user-balance');
     const balDisplay = document.getElementById('profile-balance-display');
+    const withdrawAvail = document.getElementById('withdraw-available');
+    
     const val = formatCurrency(userProfile.balance);
+    
     if (balEl) balEl.textContent = val;
     if (balDisplay) balDisplay.textContent = val;
+    if (withdrawAvail) withdrawAvail.textContent = val;
+
+    // Atualiza Profile ID/Nome
+    const idDisplay = document.getElementById('profile-id-display');
+    const nameDisplay = document.getElementById('profile-name');
+    
+    if(idDisplay) idDisplay.textContent = userProfile.id;
+    if(nameDisplay) nameDisplay.textContent = userProfile.username;
 }
 
 export function switchPage(targetId) {
@@ -147,7 +177,12 @@ export function switchPage(targetId) {
         target.classList.add('active');
         window.scrollTo(0,0);
     }
+    
+    // Atualiza Nav
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.target === targetId);
+        // Lógica para lidar com o botão central que aponta pra depósito
+        const t = item.dataset.target || item.dataset.nav;
+        if(t === targetId) item.classList.add('active');
+        else item.classList.remove('active');
     });
 }

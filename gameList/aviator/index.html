@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aviator Pro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="logo">AVIATOR <span>PRO</span></div>
+            <div class="balance">
+                <span>R$</span> <span id="balanceDisplay">50.00</span>
+            </div>
+        </div>
+
+        <!-- HISTORY BAR -->
+        <div class="history-bar">
+            <div class="history-label"><i class="fas fa-history"></i></div>
+            <div class="history-list" id="historyList">
+                <!-- Items via JS -->
+            </div>
+        </div>
+
+        <!-- GAME AREA (CANVAS) -->
+        <div class="stage-container">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="overlay-info">
+                <div class="multiplier-display" id="multiplierDisplay">1.00x</div>
+                <div class="crash-msg" id="crashMsg">VOOU PARA LONGE!</div>
+            </div>
+
+            <!-- Plane Image (Hidden, used by Canvas) -->
+            <img id="planeImg" src="https://cdn-icons-png.flaticon.com/512/7893/7893979.png" style="display:none;">
+        </div>
+
+        <!-- BET CONTROLS -->
+        <div class="controls-area">
+            <div class="bet-panel">
+                <div class="bet-input-group">
+                    <button class="adjust-btn" id="btnDec">-</button>
+                    <div class="input-wrapper">
+                        <span class="currency">R$</span>
+                        <input type="number" id="betInput" value="2.00">
+                    </div>
+                    <button class="adjust-btn" id="btnInc">+</button>
+                </div>
+                
+                <div class="quick-bets">
+                    <button class="q-btn" data-val="2">2</button>
+                    <button class="q-btn" data-val="5">5</button>
+                    <button class="q-btn" data-val="10">10</button>
+                    <button class="q-btn" data-val="20">20</button>
+                </div>
+            </div>
+
+            <div class="action-panel">
+                <button id="mainBtn" class="action-btn bet">
+                    <div class="btn-label">APOSTAR</div>
+                    <div class="btn-sub" id="btnSubLabel">PRÓXIMA RODADA</div>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,32 +1,187 @@
 
 import { renderGames, renderDeposit, renderTasks, updateUserUI, switchPage, showToast, animateBalanceUI, openGameLauncher, closeGameLauncher } from './ui.js';
-import { userProfile, tasks, gamesList, saveProfileData, saveTasksData } from './data.js';
+import { userProfile, tasks, gamesList, saveTasksData } from './data.js';
+import { supabase } from './supabaseClient.js';
 
 // --- CONFIGURAÇÃO INVICTUS ---
 const API_INVICTUS_TOKEN = "wsxiP0Dydmf2TWqjOn1iZk9CfqwxdZBg8w5eQVaTLDWHnTjyvuGAqPBkAiGU";
 const API_INVICTUS_ENDPOINT = "https://api.invictuspay.app.br/api";
 const OFFER_HASH_DEFAULT = "png8aj6v6p"; 
 
-// Variável global para controlar o intervalo de verificação
 let pollingInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    checkLoginState();
+});
+
+function initApp() {
     renderGames('gameGrid');
     renderDeposit('depositAmounts');
     renderTasks('taskList');
     updateUserUI();
 
     setupNavigation();
-    setupDepositInteraction(); // Agora contém lógica Invictus + Polling
+    setupDepositInteraction();
     setupWithdrawalLogic();
     setupGameInteraction();
-    setupInputMasks();
     setupTaskInteraction();
     setupCategoryFilter();
     setupLogout();
-});
+}
 
-// --- HELPER MASKS (Compartilhado) ---
+// --- AUTH SYSTEM (SUPABASE) ---
+async function checkLoginState() {
+    const localId = localStorage.getItem('gowin_player_id');
+    
+    if (localId) {
+        // Tenta buscar dados atualizados do DB
+        try {
+            const { data: player, error } = await supabase
+                .from('players')
+                .select(`
+                    id, username, email, cpf, phone, vip_level,
+                    wallets ( balance )
+                `)
+                .eq('id', localId)
+                .single();
+
+            if (error || !player) {
+                console.error("Erro ao buscar player:", error);
+                localStorage.removeItem('gowin_player_id');
+                showLogin();
+                return;
+            }
+
+            // Popula Store Global
+            userProfile.id = player.id;
+            userProfile.username = player.username;
+            userProfile.balance = player.wallets ? parseFloat(player.wallets.balance) : 0.00;
+            userProfile.vipLevel = player.vip_level;
+            userProfile.fullData = {
+                name: player.username,
+                email: player.email,
+                cpf: player.cpf,
+                phone: player.phone
+            };
+
+            showApp();
+        } catch (err) {
+            console.error(err);
+            showLogin();
+        }
+    } else {
+        showLogin();
+    }
+}
+
+function showLogin() {
+    document.getElementById('login-view').style.display = 'flex';
+    setupLoginInteraction();
+}
+
+function showApp() {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('mainHeader').style.display = 'flex';
+    document.getElementById('app-container').style.display = 'block';
+    document.getElementById('mainNav').style.display = 'flex';
+    initApp();
+}
+
+function setupLoginInteraction() {
+    const form = document.getElementById('registerForm');
+    const btnLogin = document.querySelector('.btn-login');
+
+    // Máscaras básicas
+    document.getElementById('regCpf').addEventListener('input', (e) => e.target.value = Masker.cpf(e.target.value));
+    document.getElementById('regPhone').addEventListener('input', (e) => e.target.value = Masker.phone(e.target.value));
+
+    // Mudar para modo "Entrar" se clicar no link
+    const footerSpan = document.querySelector('.login-footer span');
+    let isLoginMode = false;
+    
+    footerSpan.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        if(isLoginMode) {
+            document.querySelector('.login-subtitle').textContent = "Bem-vindo de volta!";
+            document.getElementById('regName').parentElement.style.display = 'none';
+            document.getElementById('regCpf').parentElement.style.display = 'none';
+            document.getElementById('regPhone').parentElement.style.display = 'none';
+            document.querySelector('.terms').style.display = 'none';
+            btnLogin.textContent = "ENTRAR";
+            footerSpan.textContent = "Criar Conta";
+        } else {
+            document.querySelector('.login-subtitle').textContent = "Jogue. Conquiste. Lucre.";
+            document.getElementById('regName').parentElement.style.display = 'block';
+            document.getElementById('regCpf').parentElement.style.display = 'block';
+            document.getElementById('regPhone').parentElement.style.display = 'block';
+            document.querySelector('.terms').style.display = 'flex';
+            btnLogin.textContent = "CRIAR CONTA GRÁTIS";
+            footerSpan.textContent = "Entrar";
+        }
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('regEmail').value;
+        
+        btnLogin.disabled = true;
+        btnLogin.textContent = "Processando...";
+
+        if(isLoginMode) {
+            // LOGIN (Simplificado por Email para demo - Ideal seria Auth.signIn)
+            const { data, error } = await supabase
+                .from('players')
+                .select('id')
+                .eq('email', email)
+                .single();
+
+            if(error || !data) {
+                showToast('Usuário não encontrado.', 'error');
+                btnLogin.disabled = false;
+                btnLogin.textContent = "ENTRAR";
+                return;
+            }
+            
+            localStorage.setItem('gowin_player_id', data.id);
+            location.reload(); // Recarrega para puxar dados frescos
+            
+        } else {
+            // REGISTRO
+            const name = document.getElementById('regName').value;
+            const cpf = document.getElementById('regCpf').value;
+            const phone = document.getElementById('regPhone').value;
+
+            if(name.length < 3 || cpf.length < 14) {
+                showToast('Dados inválidos.', 'error');
+                btnLogin.disabled = false;
+                return;
+            }
+
+            // Insert Player
+            const { data, error } = await supabase
+                .from('players')
+                .insert([{ username: name, email, cpf, phone }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error(error);
+                if(error.code === '23505') showToast('E-mail ou CPF já cadastrados.', 'error');
+                else showToast('Erro ao criar conta.', 'error');
+                btnLogin.disabled = false;
+                btnLogin.textContent = "CRIAR CONTA GRÁTIS";
+            } else {
+                localStorage.setItem('gowin_player_id', data.id);
+                // Trigger do banco já criou a wallet
+                showToast('Conta criada com sucesso!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+    });
+}
+
+// --- HELPER MASKS ---
 const Masker = {
     cpf: (v) => {
         v = v.replace(/\D/g, "");
@@ -42,35 +197,8 @@ const Masker = {
         v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
         v = v.replace(/(\d)(\d{4})$/, "$1-$2");
         return v;
-    },
-    cep: (v) => {
-        v = v.replace(/\D/g, "");
-        if (v.length > 8) v = v.substring(0, 8);
-        v = v.replace(/^(\d{5})(\d)/, "$1-$2");
-        return v;
     }
 };
-
-// --- CATEGORIAS ---
-function setupCategoryFilter() {
-    const catItems = document.querySelectorAll('.cat-item');
-    const titleEl = document.getElementById('homeSectionTitle');
-    const gridEl = document.getElementById('gameGrid');
-
-    catItems.forEach(item => {
-        item.addEventListener('click', () => {
-            catItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            const cat = item.dataset.cat;
-            const catName = item.textContent.trim();
-            gridEl.style.opacity = '0.5';
-            setTimeout(() => {
-                gridEl.style.opacity = '1';
-                titleEl.innerHTML = `<i class="${item.querySelector('i').className}"></i> ${catName}`;
-            }, 300);
-        });
-    });
-}
 
 // --- LOGOUT ---
 function setupLogout() {
@@ -78,156 +206,97 @@ function setupLogout() {
     if(btnLogout) {
         btnLogout.addEventListener('click', () => {
             if(confirm('Tem certeza que deseja sair?')) {
-                showToast('Saindo...', 'info');
-                setTimeout(() => { location.reload(); }, 1000);
+                localStorage.removeItem('gowin_player_id');
+                location.reload();
             }
         });
     }
 }
 
-// --- JOGOS ---
+// --- JOGOS E UI ---
+function setupCategoryFilter() {
+    const catItems = document.querySelectorAll('.cat-item');
+    const gridEl = document.getElementById('gameGrid');
+    const titleEl = document.getElementById('homeSectionTitle');
+
+    catItems.forEach(item => {
+        item.addEventListener('click', () => {
+            catItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            const cat = item.dataset.cat;
+            
+            gridEl.style.opacity = '0.5';
+            setTimeout(() => {
+                renderGames('gameGrid', cat);
+                gridEl.style.opacity = '1';
+                titleEl.innerHTML = `<i class="${item.querySelector('i').className}"></i> ${item.querySelector('span').textContent}`;
+            }, 200);
+        });
+    });
+}
+
 function setupGameInteraction() {
     document.getElementById('gameGrid').addEventListener('click', (e) => {
         const card = e.target.closest('.game-card');
         if(card) {
             const gameName = card.dataset.game;
             const gameData = gamesList.find(g => g.name === gameName);
-            const gameUrl = gameData ? gameData.url : null;
-            openGameLauncher(gameName, gameUrl);
+            openGameLauncher(gameName, gameData ? gameData.url : null);
         }
     });
-
     const closeBtn = document.getElementById('btnCloseModal');
     if(closeBtn) closeBtn.addEventListener('click', closeGameLauncher);
 }
 
-// --- TAREFAS ---
+// --- TAREFAS (COM UPDATE DB) ---
 function setupTaskInteraction() {
     const list = document.getElementById('taskList');
     if(list) {
-        list.addEventListener('click', (e) => {
-            if(e.target.classList.contains('btn-claim-task')) {
+        list.addEventListener('click', async (e) => {
+            if(e.target.classList.contains('task-btn') && !e.target.disabled) {
                 const index = e.target.dataset.index;
                 const task = tasks[index];
-                if(task.status === "Receber") {
-                    userProfile.balance += task.reward;
+
+                // Chama função do DB para adicionar saldo atômico
+                const { data: newBalance, error } = await supabase
+                    .rpc('add_balance', { p_id: userProfile.id, amount: task.reward });
+
+                if (!error) {
+                    userProfile.balance = newBalance;
                     task.status = "Resgatado";
-                    saveProfileData();
-                    saveTasksData();
-                    animateBalanceUI(userProfile.balance);
-                    showToast(`Bônus de R$ ${task.reward.toFixed(2)} recebido!`, 'success');
+                    saveTasksData(); // Tasks ainda locais por enquanto
+                    animateBalanceUI(newBalance);
+                    showToast(`Bônus de R$ ${task.reward.toFixed(2)} resgatado!`, 'success');
                     renderTasks('taskList');
+                } else {
+                    showToast('Erro ao resgatar bônus', 'error');
                 }
             }
         });
     }
 }
 
-// --- MÁSCARAS GERAIS ---
-function setupInputMasks() {
-    const apply = (id, fn) => {
-        const el = document.getElementById(id);
-        if(el) el.addEventListener('input', (e) => e.target.value = fn(e.target.value));
-    };
-    apply('inputCpf', Masker.cpf);
-    apply('inputTel', Masker.phone);
-    apply('inputCep', Masker.cep);
-    // Mascaras do Depósito
-    apply('depCpf', Masker.cpf);
-    apply('depPhone', Masker.phone);
-    apply('depCep', Masker.cep);
-}
-
-// --- NAVEGAÇÃO ---
-function setupNavigation() {
-    document.body.addEventListener('click', (e) => {
-        const targetEl = e.target.closest('[data-nav], .nav-item');
-        if (targetEl) {
-            const targetId = targetEl.dataset.nav || targetEl.dataset.target;
-            if (targetId) switchPage(targetId);
-        }
-    });
-
-    const refreshBtn = document.getElementById('btnRefreshBalance');
-    if(refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            refreshBtn.classList.add('fa-spin');
-            setTimeout(() => refreshBtn.classList.remove('fa-spin'), 1000);
-            updateUserUI();
-            showToast('Saldo atualizado!', 'info');
-        });
-    }
-
-    const btnCopy = document.getElementById('btnCopyLink');
-    if(btnCopy) {
-        btnCopy.addEventListener('click', () => {
-            const link = document.getElementById('inviteLink');
-            navigator.clipboard.writeText(link.value);
-            showToast('Link copiado!', 'success');
-        });
-    }
-}
-
-// =========================================================
-// 💸 DEPÓSITO - LÓGICA INVICTUS + POLLING
-// =========================================================
+// --- DEPÓSITO INTEGRADO (SUPABASE + INVICTUS) ---
 function setupDepositInteraction() {
     const manualInput = document.getElementById('manualDepositInput');
     const actionBtn = document.getElementById('btnDepositAction');
     const container = document.getElementById('depositAmounts');
-    const msgEl = document.getElementById('depositMsg');
 
-    // Elementos do Form
-    const inputs = {
-        name: document.getElementById('depName'),
-        cpf: document.getElementById('depCpf'),
-        phone: document.getElementById('depPhone'),
-        email: document.getElementById('depEmail'),
-        cep: document.getElementById('depCep'),
-        number: document.getElementById('depNumber'),
-        street: document.getElementById('depStreet'),
-        district: document.getElementById('depDistrict'),
-        city: document.getElementById('depCity'),
-        state: document.getElementById('depState'),
-        preview: document.getElementById('depAddressPreview'),
-        loader: document.getElementById('depCepLoader')
-    };
+    // Preencher UI
+    const userData = userProfile.fullData || {};
+    document.getElementById('confirmName').textContent = userData.name || "...";
+    document.getElementById('confirmCpf').textContent = userData.cpf || "...";
 
-    // 1. Busca CEP Automática (ViaCEP)
-    if(inputs.cep) {
-        inputs.cep.addEventListener('blur', async () => {
-            const cep = inputs.cep.value.replace(/\D/g, '');
-            if(cep.length === 8) {
-                inputs.loader.style.display = 'block';
-                try {
-                    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                    const data = await r.json();
-                    if(!data.erro) {
-                        inputs.street.value = data.logradouro;
-                        inputs.district.value = data.bairro;
-                        inputs.city.value = data.localidade;
-                        inputs.state.value = data.uf;
-                        inputs.preview.style.display = 'block';
-                        inputs.preview.innerHTML = `📍 ${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`;
-                        inputs.number.focus();
-                    }
-                } catch(e) { console.error(e); } 
-                finally { inputs.loader.style.display = 'none'; }
-            }
-        });
-    }
-
-    // 2. Seleção de Valor
     const validate = (val) => {
         const num = parseFloat(val);
         if(!num || num < 15) {
             actionBtn.disabled = true;
             actionBtn.textContent = 'Mínimo R$ 15,00';
-            actionBtn.style.background = '#555';
+            actionBtn.style.opacity = '0.5';
         } else {
             actionBtn.disabled = false;
-            actionBtn.textContent = `Gerar PIX R$ ${num.toFixed(2)}`;
-            actionBtn.style.background = 'var(--accent)';
+            actionBtn.textContent = `PAGAR R$ ${num.toFixed(2)}`;
+            actionBtn.style.opacity = '1';
         }
     };
 
@@ -245,53 +314,53 @@ function setupDepositInteraction() {
     }
     if(manualInput) manualInput.addEventListener('input', (e) => validate(e.target.value));
 
-    // 3. AÇÃO DE PAGAMENTO (Call API)
     if(actionBtn) {
         actionBtn.addEventListener('click', async () => {
-            // Validações Básicas
-            if(!inputs.name.value || inputs.cpf.value.length < 14 || inputs.phone.value.length < 14 || !inputs.email.value || !inputs.cep.value || !inputs.number.value) {
-                showToast('Preencha todos os dados corretamente!', 'error');
-                // Scroll suave para o form
-                document.querySelector('.checkout-form-container').scrollIntoView({ behavior: 'smooth' });
-                return;
-            }
-
             const amount = parseFloat(manualInput.value);
             const amountCents = Math.round(amount * 100);
 
-            // UI Loading
             actionBtn.disabled = true;
-            actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-            msgEl.textContent = "Conectando gateway seguro...";
+            actionBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> GERANDO...';
 
-            // Payload Invictus
-            const customer = {
-                name: inputs.name.value,
-                email: inputs.email.value,
-                document: inputs.cpf.value,
-                phone_number: inputs.phone.value,
-                street_name: inputs.street.value || "Rua Geral",
-                street_number: inputs.number.value,
-                neighborhood: inputs.district.value || "Centro",
-                zip_code: inputs.cep.value,
-                city: inputs.city.value || "Cidade",
-                state: inputs.state.value || "UF"
-            };
+            // Cria transação PENDING no Supabase
+            const { data: txn, error } = await supabase
+                .from('transactions')
+                .insert([{
+                    player_id: userProfile.id,
+                    type: 'DEPOSIT',
+                    amount: amount,
+                    status: 'pending'
+                }])
+                .select()
+                .single();
 
+            if(error) {
+                showToast('Erro ao iniciar transação.', 'error');
+                actionBtn.disabled = false;
+                return;
+            }
+
+            // Chama Invictus
             const payload = {
                 "amount": amountCents, 
                 "offer_hash": OFFER_HASH_DEFAULT, 
                 "payment_method": "pix", 
-                "customer": customer,
+                "customer": {
+                    name: userData.name,
+                    email: userData.email,
+                    document: userData.cpf,
+                    phone_number: userData.phone,
+                    // Dados dummy de endereço obrigatórios
+                    street_name: "Rua Digital", street_number: "100", neighborhood: "Centro", 
+                    zip_code: "01001000", city: "Sao Paulo", state: "SP"
+                },
                 "cart": [{
                     "product_hash": OFFER_HASH_DEFAULT,
-                    "title": `Recarga GOW.in - ${amount}`,
+                    "title": `Créditos GOW - ${amount}`,
                     "price": amountCents,
                     "quantity": 1,
-                    "operation_type": 1, 
-                    "tangible": false
+                    "operation_type": 1, "tangible": false
                 }],
-                "installments": 1,
                 "transaction_origin": "api"
             };
 
@@ -302,170 +371,132 @@ function setupDepositInteraction() {
                     body: JSON.stringify(payload)
                 });
                 
-                const data = await response.json();
+                const apiData = await response.json();
 
-                if(response.ok && data.payment_method === 'pix' && data.pix) {
-                    msgEl.textContent = "";
-                    
-                    // Exibe Modal
-                    showPixModal(data, amount);
-                    
-                    // Inicia Monitoramento (Polling)
-                    monitorPayment(data.hash, amount);
-                    
+                if(response.ok && apiData.payment_method === 'pix') {
+                    // Atualiza transação com ID externo
+                    await supabase.from('transactions')
+                        .update({ external_id: apiData.hash })
+                        .eq('id', txn.id);
+
+                    showPixModal(apiData, amount);
+                    monitorPayment(apiData.hash, amount, txn.id);
                 } else {
-                    const err = data.errors ? Object.values(data.errors).flat().join(', ') : (data.message || 'Erro desconhecido');
-                    showToast('Erro: ' + err, 'error');
-                    msgEl.textContent = "Falha na geração.";
+                    showToast('Erro na Invictus.', 'error');
                 }
 
             } catch(e) {
                 console.error(e);
-                showToast('Erro de conexão com servidor', 'error');
+                showToast('Erro de conexão.', 'error');
             } finally {
                 actionBtn.disabled = false;
-                actionBtn.textContent = `Gerar PIX R$ ${amount.toFixed(2)}`;
+                actionBtn.textContent = `PAGAR R$ ${amount.toFixed(2)}`;
             }
         });
     }
 }
 
-// 4. LÓGICA DE MONITORAMENTO (POLLING)
-function monitorPayment(transactionHash, amount) {
+function monitorPayment(externalHash, amount, txnId) {
     if(pollingInterval) clearInterval(pollingInterval);
-    
     const startTime = Date.now();
-    const timeout = 20 * 60 * 1000; // 20 minutos em ms
-
-    // Verifica a cada 5 segundos
+    
     pollingInterval = setInterval(async () => {
-        
-        // Verifica Timeout
-        if (Date.now() - startTime > timeout) {
+        if (Date.now() - startTime > 1200000) { // 20 min
             clearInterval(pollingInterval);
             return;
         }
-
         try {
-            const response = await fetch(`${API_INVICTUS_ENDPOINT}/public/v1/transactions/${transactionHash}?api_token=${API_INVICTUS_TOKEN}`);
+            const response = await fetch(`${API_INVICTUS_ENDPOINT}/public/v1/transactions/${externalHash}?api_token=${API_INVICTUS_TOKEN}`);
             const data = await response.json();
 
-            // Status aceitos como pagos
-            if (['PAID', 'paid', 'COMPLETED', 'completed'].includes(data.status)) {
-                clearInterval(pollingInterval); // Para o loop
+            if (['PAID', 'paid', 'COMPLETED'].includes(data.status)) {
+                clearInterval(pollingInterval);
                 
-                // Credita Saldo
-                userProfile.balance += amount;
-                saveProfileData();
-                animateBalanceUI(userProfile.balance);
+                // 1. Adiciona saldo via RPC (Atômico)
+                const { data: newBal } = await supabase.rpc('add_balance', { p_id: userProfile.id, amount: amount });
                 
-                // Fecha Modal e Mostra Sucesso
-                const modal = document.getElementById('pixModal');
-                if(modal) modal.style.display = 'none';
-                
-                showToast(`Pagamento de R$ ${amount.toFixed(2)} CONFIRMADO!`, 'success');
+                // 2. Atualiza status da transação
+                await supabase.from('transactions').update({ status: 'completed' }).eq('id', txnId);
+
+                // UI Update
+                userProfile.balance = newBal;
+                animateBalanceUI(newBal);
+                document.getElementById('pixModal').style.display = 'none';
+                showToast(`Pagamento de R$ ${amount.toFixed(2)} APROVADO!`, 'success');
                 switchPage('home');
             }
-        } catch (error) {
-            console.error("Erro ao verificar status do pagamento", error);
-            // Não para o loop em caso de erro de rede temporário, tenta de novo em 5s
-        }
+        } catch (error) {}
     }, 5000);
 }
 
-
-// 5. Modal de PIX (Renderização)
 function showPixModal(data, amount) {
     const modal = document.getElementById('pixModal');
-    const amountEl = document.getElementById('modalAmount');
-    const hashEl = document.getElementById('modalHash');
+    document.getElementById('modalAmount').textContent = `R$ ${amount.toFixed(2)}`;
+    document.getElementById('modalHash').textContent = `ID: ${data.hash}`;
     const textarea = document.getElementById('pixCodeTextarea');
-    const qrContainer = document.getElementById('qrCodeContainer');
-    const qrImage = document.getElementById('qrCodeImage');
-    const btnCopy = document.getElementById('copyPixButton');
-    const btnClose = document.getElementById('btnClosePixModal');
-
-    amountEl.textContent = `R$ ${amount.toFixed(2)}`;
-    hashEl.textContent = `ID Transação: ${data.hash}`;
     textarea.value = data.pix.pix_qr_code;
-
-    if (data.pix.qr_code_base64) {
-        qrImage.src = `data:image/png;base64,${data.pix.qr_code_base64}`;
-        qrContainer.style.display = 'block';
-    } else {
-        qrContainer.style.display = 'none';
-    }
+    
+    const qrImg = document.getElementById('qrCodeImage');
+    if (data.pix.qr_code_base64) qrImg.src = `data:image/png;base64,${data.pix.qr_code_base64}`;
 
     modal.style.display = 'flex';
-
-    // Eventos do Modal
-    const closeModal = () => { 
+    document.getElementById('btnClosePixModal').onclick = () => { 
         modal.style.display = 'none'; 
-        // IMPORTANTE: Para o polling se o usuário fechar o modal
         if(pollingInterval) clearInterval(pollingInterval);
     };
     
-    btnClose.onclick = closeModal;
-    
+    const btnCopy = document.getElementById('copyPixButton');
     btnCopy.onclick = () => {
         textarea.select();
-        textarea.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(textarea.value);
-        
-        const originalText = btnCopy.innerHTML;
-        btnCopy.innerHTML = `<i class="fas fa-check"></i> Copiado!`;
-        btnCopy.style.background = "#00c853";
-        setTimeout(() => {
-            btnCopy.innerHTML = originalText;
-            btnCopy.style.background = ""; 
-        }, 2000);
+        btnCopy.innerHTML = `<i class="fas fa-check"></i> COPIADO!`;
+        setTimeout(() => { btnCopy.innerHTML = `<i class="far fa-copy"></i> Copiar Código`; }, 2000);
     };
 }
 
-// --- SAQUE ---
-function setupWithdrawalLogic() {
-    const btnCep = document.getElementById('btnBuscarCep');
-    const inpCep = document.getElementById('inputCep');
-    const inpEnd = document.getElementById('inputEndereco');
-
-    if(btnCep) {
-        btnCep.addEventListener('click', async () => {
-            const cep = inpCep.value.replace(/\D/g, '');
-            if(cep.length !== 8) return showToast('CEP Inválido', 'error');
+// --- NAVEGAÇÃO BÁSICA ---
+function setupNavigation() {
+    document.body.addEventListener('click', (e) => {
+        const targetEl = e.target.closest('[data-nav], .nav-item');
+        if (targetEl) {
+            const targetId = targetEl.dataset.nav || targetEl.dataset.target;
+            if (targetId) switchPage(targetId);
+        }
+    });
+    const refreshBtn = document.getElementById('btnRefreshBalance');
+    if(refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.classList.add('fa-spin');
+            // Refresh DB Balance
+            const { data } = await supabase
+                .from('wallets')
+                .select('balance')
+                .eq('player_id', userProfile.id)
+                .single();
             
-            btnCep.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            try {
-                const req = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await req.json();
-                if(data.erro) throw new Error();
-                inpEnd.value = `${data.logradouro}, ${data.bairro}`;
-                showToast('Endereço encontrado!', 'success');
-            } catch(e) {
-                showToast('CEP não encontrado', 'error');
-            } finally {
-                btnCep.innerHTML = '<i class="fas fa-search"></i>';
+            if(data) {
+                userProfile.balance = data.balance;
+                updateUserUI();
             }
+            setTimeout(() => refreshBtn.classList.remove('fa-spin'), 1000);
         });
     }
+    const btnCopy = document.getElementById('btnCopyLink');
+    if(btnCopy) {
+        btnCopy.addEventListener('click', () => {
+            const link = document.getElementById('inviteLink');
+            navigator.clipboard.writeText(link.value);
+            showToast('Link copiado!', 'success');
+        });
+    }
+}
 
+function setupWithdrawalLogic() {
     const btnWithdraw = document.getElementById('btnRequestWithdraw');
     if(btnWithdraw) {
         btnWithdraw.addEventListener('click', () => {
-            const withdrawAmount = 10.00;
-            if(userProfile.balance < withdrawAmount) {
-                showToast('Saldo insuficiente!', 'error');
-                return;
-            }
-            btnWithdraw.disabled = true;
-            btnWithdraw.textContent = 'Processando...';
-            setTimeout(() => {
-                userProfile.balance -= withdrawAmount;
-                saveProfileData();
-                animateBalanceUI(userProfile.balance);
-                showToast('Saque de R$ 10,00 solicitado!', 'success');
-                btnWithdraw.textContent = 'Solicitar Saque';
-                btnWithdraw.disabled = false;
-            }, 2000);
+            showToast('Solicitação enviada para análise.', 'info');
+            // Futuramente: Insert into transactions type='WITHDRAW'
         });
     }
 }

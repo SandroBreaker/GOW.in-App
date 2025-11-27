@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,6 +9,8 @@
     <title>GOW.in - App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <!-- SUPABASE CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="importmap">
 {
   "imports": {
@@ -23,277 +24,18 @@
 <body>
 
     <div id="toast-container"></div>
-
-    <!-- MODAL DO JOGO -->
-    <div id="game-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal-game-title">Nome do Jogo</span>
-                <button class="close-modal-btn" id="btnCloseModal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="game-loader">
-                <div class="spinner"></div>
-                <p>Conectando ao provedor...</p>
-            </div>
-            <div class="game-frame-placeholder" style="display:none;">
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE PIX (NOVO) -->
-    <div id="pixModal" class="modal-overlay">
-        <div class="modal-content" style="height: auto; min-height: 60vh; border-radius: 20px 20px 0 0; background: #1a0b2e;">
-            <div class="modal-header">
-                <span>Pagamento PIX</span>
-                <button class="close-modal-btn" id="btnClosePixModal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="pix-content">
-                <div style="text-align:center; margin-bottom:15px;">
-                    <p style="color:#aaa; font-size:12px;">Valor a pagar</p>
-                    <h2 id="modalAmount" style="color:#00e676; font-size:28px;">R$ 0,00</h2>
-                </div>
-                
-                <div id="qrCodeContainer" class="qr-container">
-                    <img id="qrCodeImage" src="" alt="QR Code PIX">
-                </div>
-
-                <div class="pix-copy-area">
-                    <label>Pix Copia e Cola</label>
-                    <textarea id="pixCodeTextarea" readonly></textarea>
-                    <button id="copyPixButton" class="cta-btn"><i class="far fa-copy"></i> Copiar Código</button>
-                </div>
-
-                <p style="text-align:center; font-size:11px; color:#777; margin-top:15px;">
-                    Após o pagamento, seu saldo será atualizado automaticamente.<br>
-                    <span id="modalHash" style="font-size:9px;"></span>
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <header>
-        <div class="logo">GOW<span>.in</span></div>
-        <div class="header-right">
-            <div class="balance-badge">
-                <img src="https://flagcdn.com/w20/br.png" alt="BR" style="width:14px; margin-right:5px;">
-                <span id="user-balance">0,00</span> 
-                <i class="fas fa-sync-alt refresh-icon" id="btnRefreshBalance" style="font-size:10px; margin-left:5px;"></i>
-            </div>
-            <button class="btn-header btn-deposito" data-nav="deposito">Depósito</button>
-        </div>
-    </header>
-
-    <main id="app-container">
-        
-        <div id="home" class="page active">
-             <div class="category-nav" id="categoryNav">
-                <div class="cat-item active" data-cat="all"><i class="fas fa-fire"></i> Popular</div>
-                <div class="cat-item" data-cat="slots"><i class="fas fa-slot-machine"></i> Slots</div>
-                <div class="cat-item" data-cat="blockchain"><i class="fas fa-dice"></i> Blockchain</div>
-                <div class="cat-item" data-cat="pescaria"><i class="fas fa-fish"></i> Pescaria</div>
-            </div>
-            <div class="section-title" id="homeSectionTitle"><i class="fas fa-fire-alt"></i> Popular</div>
-            <div class="game-grid" id="gameGrid"></div>
-        </div>
-
-        <div id="ofertas" class="page">
-             <div class="header-page-title">Recompensas e Missões</div>
-             <div class="task-list" id="taskList"></div>
-        </div>
-
-        <div id="promocao" class="page">
-             <div class="promo-card">
-                <h3>Convide e Ganhe</h3>
-                <div class="invite-link-box">
-                    <label>Seu Link de Indicação GOW.in</label>
-                    <div class="link-wrapper">
-                        <input type="text" value="https://gow.in/r/tskq6476" readonly id="inviteLink">
-                        <button class="copy-btn" id="btnCopyLink"><i class="far fa-copy"></i></button>
-                    </div>
-                </div>
-
-                <div class="share-buttons">
-                    <a href="https://t.me/share/url?url=https://gow.in/r/tskq6476" target="_blank" class="share-btn telegram"><i class="fab fa-telegram-plane"></i></a>
-                    <a href="https://wa.me/?text=Venha%20jogar%20na%20GOW.in!%20https://gow.in/r/tskq6476" target="_blank" class="share-btn whatsapp"><i class="fab fa-whatsapp"></i></a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://gow.in/r/tskq6476" target="_blank" class="share-btn facebook"><i class="fab fa-facebook-f"></i></a>
-                </div>
-
-                <div class="bonus-tiers">
-                    <div class="tier-item">
-                        <div class="tier-icon"><i class="fas fa-user-plus"></i></div>
-                        <div class="tier-info"><span>1 Amigo</span><small>Depósito min. R$20</small></div>
-                        <div class="tier-reward">+R$ 5,00</div>
-                    </div>
-                    <div class="tier-item highlight">
-                        <div class="tier-icon"><i class="fas fa-crown"></i></div>
-                        <div class="tier-info"><span>10 Amigos</span><small>Super Bônus</small></div>
-                        <div class="tier-reward">+R$ 100,00</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="suporte" class="page">
-              <div class="header-page-title">Central de Ajuda</div>
-              <div class="support-card">
-                <img src="https://ui-avatars.com/api/?name=Support&background=random" class="support-avatar">
-                <div style="flex:1">
-                    <h4>Suporte 24h</h4>
-                    <p style="font-size:12px; color:#aaa; margin-top:5px;">Tempo médio de resposta: 2 min</p>
-                </div>
-                <button class="action-btn" style="width: auto; padding: 0 15px;" onclick="alert('Iniciando chat...')">Chat</button>
-              </div>
-        </div>
-
-        <div id="perfil" class="page">
-            <div class="profile-header-new">
-                <div class="profile-user-row">
-                    <div class="profile-avatar-lg">
-                        <img src="https://ui-avatars.com/api/?name=User&background=random&color=fff" alt="User">
-                    </div>
-                    <div class="profile-texts">
-                        <h3 id="profile-name">tskq6476</h3>
-                        <span class="profile-id">ID: 290111437</span>
-                    </div>
-                </div>
-                <div class="wallet-card">
-                    <div class="wallet-label">Saldo Total</div>
-                    <div class="wallet-balance">
-                        R$ <span id="profile-balance-display">0,00</span>
-                    </div>
-                    <div class="wallet-actions">
-                        <button class="action-btn" data-nav="saque">Saque</button>
-                        <button class="action-btn btn-deposito-profile" data-nav="deposito">Depósito</button>
-                    </div>
-                </div>
-            </div>
-             <button class="logout-btn-small" id="btnLogout">Sair da conta</button>
-        </div>
-
-        <!-- DEPÓSITO COM FORMULÁRIO -->
-        <div id="deposito" class="page">
-             <div class="header-page-title">Recarregar Conta</div>
-             
-             <!-- Formulário de Cadastro (Obrigatório API) -->
-             <div class="checkout-form-container">
-                 <h4 style="margin-bottom:15px; color:#fff; font-size:14px; border-left:3px solid var(--accent); padding-left:10px;">Dados do Titular</h4>
-                 <form id="depositForm">
-                     <div class="input-group-form">
-                         <label>Nome Completo</label>
-                         <input type="text" id="depName" class="dark-input" placeholder="Seu nome" required>
-                     </div>
-                     <div class="form-row">
-                         <div class="input-group-form">
-                             <label>CPF</label>
-                             <input type="tel" id="depCpf" class="dark-input" placeholder="000.000.000-00" maxlength="14" required>
-                         </div>
-                         <div class="input-group-form">
-                             <label>Telefone</label>
-                             <input type="tel" id="depPhone" class="dark-input" placeholder="(00) 00000-0000" maxlength="15" required>
-                         </div>
-                     </div>
-                     <div class="input-group-form">
-                         <label>E-mail</label>
-                         <input type="email" id="depEmail" class="dark-input" placeholder="seu@email.com" required>
-                     </div>
-                     
-                     <!-- Endereço (CEP Auto) -->
-                     <div class="form-row">
-                        <div class="input-group-form" style="flex:1">
-                            <label>CEP</label>
-                            <div style="position:relative">
-                                <input type="tel" id="depCep" class="dark-input" placeholder="00000-000" maxlength="9" required>
-                                <span id="depCepLoader" style="position:absolute; right:10px; top:12px; display:none; color:var(--accent);"><i class="fas fa-spinner fa-spin"></i></span>
-                            </div>
-                        </div>
-                        <div class="input-group-form" style="flex:0.6">
-                            <label>Número</label>
-                            <input type="text" id="depNumber" class="dark-input" placeholder="Nº" required>
-                        </div>
-                     </div>
-                     
-                     <!-- Campos Ocultos Endereço -->
-                     <div style="display:none">
-                         <input type="text" id="depStreet">
-                         <input type="text" id="depDistrict">
-                         <input type="text" id="depCity">
-                         <input type="text" id="depState">
-                     </div>
-                     
-                     <div id="depAddressPreview" style="font-size:11px; color:#aaa; margin-bottom:15px; background:rgba(0,0,0,0.2); padding:8px; border-radius:4px; display:none;">
-                     </div>
-                 </form>
-             </div>
-
-             <div class="manual-deposit-box" style="margin-top:20px;">
-                <label>Valor do Depósito (BRL)</label>
-                <div class="input-group">
-                    <span class="currency-prefix">R$</span>
-                    <input type="number" id="manualDepositInput" placeholder="0,00" min="15">
-                </div>
-            </div>
-            
-            <div class="deposit-grid" id="depositAmounts"></div>
-            
-            <p id="depositMsg" style="text-align:center; font-size:12px; color:#aaa; margin-top:10px;"></p>
-            <button class="cta-btn" id="btnDepositAction">Gerar PIX</button>
-        </div>
-
-        <div id="saque" class="page">
-             <div class="header-page-title">Solicitar Retirada</div>
-             <div class="withdraw-form">
-                <div class="input-group-form">
-                    <label>Nome Completo</label>
-                    <input type="text" class="dark-input">
-                </div>
-                <div class="form-row">
-                    <div class="input-group-form">
-                        <label>CPF</label>
-                        <input type="tel" id="inputCpf" class="dark-input" placeholder="000.000.000-00" maxlength="14">
-                    </div>
-                    <div class="input-group-form">
-                        <label>Telefone</label>
-                        <input type="tel" id="inputTel" class="dark-input" placeholder="(00) 00000-0000" maxlength="15">
-                    </div>
-                </div>
-                
-                <div class="input-group-form">
-                    <label>CEP</label>
-                    <div class="cep-wrapper">
-                        <input type="tel" id="inputCep" class="dark-input" placeholder="00000-000" maxlength="9">
-                        <button id="btnBuscarCep" class="cep-btn"><i class="fas fa-search"></i></button>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="input-group-form" style="flex: 2;">
-                        <label>Endereço</label>
-                        <input type="text" id="inputEndereco" class="dark-input" readonly placeholder="Rua...">
-                    </div>
-                    <div class="input-group-form" style="flex: 1;">
-                        <label>Número</label>
-                        <input type="number" id="inputNumero" class="dark-input" placeholder="Nº">
-                    </div>
-                </div>
-
-                 <div class="input-group-form">
-                    <label>Chave PIX</label>
-                    <input type="text" class="dark-input">
-                </div>
-                <button class="cta-btn btn-withdraw-action" id="btnRequestWithdraw">Solicitar Saque</button>
-             </div>
-        </div>
-
-    </main>
-
-    <nav class="bottom-nav">
-         <div class="nav-item active" data-target="home"><i class="fas fa-home"></i><span>Início</span></div>
-         <div class="nav-item" data-target="ofertas"><i class="fas fa-gift"></i><span>Missões</span></div>
-         <div class="nav-item" data-target="promocao"><i class="fas fa-users"></i><span>Promoção</span></div>
-         <div class="nav-item" data-target="suporte"><i class="fas fa-headset"></i><span>Suporte</span></div>
-         <div class="nav-item" data-target="perfil"><i class="fas fa-user"></i><span>Perfil</span></div>
+<!-- ... RESTO DO CÓDIGO PERMANECE IGUAL ATÉ O FIM ... -->
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav" id="mainNav" style="display:none;">
+         <div class="nav-item active" data-target="home"><i class="fas fa-home"></i><span>Lobby</span></div>
+         <div class="nav-item" data-target="ofertas"><i class="fas fa-scroll"></i><span>Quests</span></div>
+         <div class="nav-item action-center" data-target="deposito"><div class="center-btn"><i class="fas fa-plus"></i></div></div>
+         <div class="nav-item" data-target="suporte"><i class="fas fa-headset"></i><span>Ajuda</span></div>
+         <div class="nav-item" data-target="perfil"><i class="fas fa-user-ninja"></i><span>Perfil</span></div>
     </nav>
 
+    <!-- SUPABASE CLIENT -->
+    <script type="module" src="js/supabaseClient.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

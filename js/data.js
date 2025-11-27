@@ -1,35 +1,37 @@
 
-// Carrega dados iniciais ou usa padrão
-// Atualizado para marca GOW.in
-const savedProfile = localStorage.getItem('gowin_profile');
-const savedTasks = localStorage.getItem('gowin_tasks');
+// STORE CENTRALIZADA
+// Os dados agora são voláteis na memória e persistidos no Supabase via main.js
 
-const defaultProfile = {
-    id: "290111437",
-    username: "tskq6476",
-    balance: 0.00, // Saldo inicial zerado
-    vipLevel: 0
+export let userProfile = {
+    id: null,        // UUID do Supabase
+    username: null,
+    balance: 0.00,
+    vipLevel: 0,
+    fullData: {}     // email, cpf, phone
 };
 
-const defaultTasks = [
+export const defaultTasks = [
     { title: "Bônus de Boas Vindas", reward: 5.00, status: "Receber" },
     { title: "Verificar E-mail", reward: 2.00, status: "Receber" },
     { title: "Primeiro Depósito", reward: 10.00, status: "Receber" }
 ];
 
-export let userProfile = savedProfile ? JSON.parse(savedProfile) : defaultProfile;
-export let tasks = savedTasks ? JSON.parse(savedTasks) : defaultTasks;
+export let tasks = JSON.parse(localStorage.getItem('gowin_tasks')) || defaultTasks;
 
-export function saveProfileData() {
-    localStorage.setItem('gowin_profile', JSON.stringify(userProfile));
-}
-
+// Funções de Persistência Local (apenas para cache rápido ou tasks simples)
 export function saveTasksData() {
     localStorage.setItem('gowin_tasks', JSON.stringify(tasks));
 }
 
+// Lista de Jogos (Estática)
 export const gamesList = [
-    // --- JOGOS LOCAIS (gameList) ---
+    { 
+        id: 106, 
+        name: "Aviator Pro", 
+        img: "https://aviator-game.in/wp-content/uploads/2023/01/aviator-game-logo.png", 
+        provider: "CRASH", 
+        url: "gameList/aviator/index.html" 
+    },
     { 
         id: 105, 
         name: "Dragon's Cave", 
@@ -65,8 +67,6 @@ export const gamesList = [
         provider: "EXCLUSIVO", 
         url: "gameList/elden ring/index.html" 
     },
-    // ------------------------------
-
     { id: 2, name: "Fortune Tiger", img: "https://placehold.co/100x100/orange/white?text=Tiger", provider: "PG" },
     { id: 3, name: "Fortune Dragon", img: "https://placehold.co/100x100/red/white?text=Dragon", provider: "PG" },
     { id: 4, name: "Fortune Snake", img: "https://placehold.co/100x100/green/white?text=Snake", provider: "PG" },
